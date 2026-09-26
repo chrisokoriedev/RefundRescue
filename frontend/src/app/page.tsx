@@ -64,43 +64,43 @@ export default function CustomerPortalPage() {
       }}
     >
       {/* Welcome Banner Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
+      <div className="bg-white rounded-xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50/50 rounded-full blur-2xl pointer-events-none"></div>
 
-        <div className="flex flex-col gap-2 max-w-2xl relative z-10">
+        <div className="flex flex-col gap-1.5 max-w-2xl relative z-10">
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-blue-50 text-[#3861FB] border border-blue-100 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#3861FB]" />
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-blue-50 text-[#3861FB] border border-blue-100 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-[#3861FB]" />
               AI Support Deliberation Portal
             </span>
             <span className="text-slate-300 text-xs">•</span>
             <span className="text-slate-500 text-xs font-semibold">Instant Policy Decisions</span>
           </div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
             Order Returns, Exchanges & Issue Resolution
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
+          <p className="text-xs text-slate-500 leading-relaxed font-normal">
             Submit refund claims evaluated in real-time by a deterministic policy engine and Google Gemini Flash AI, with built-in prompt injection defense.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Store Protection</span>
+          <div className="px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200/70 flex flex-col">
+            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Store Protection</span>
             <span className="text-xs font-bold text-slate-800">POL-001 - POL-005 Active</span>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between shadow-xs">
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0" />
             <span>{error}</span>
           </div>
           <button
             onClick={loadCustomers}
-            className="px-3.5 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-xs font-bold transition-colors cursor-pointer"
           >
             Retry Connection
           </button>
@@ -140,7 +140,7 @@ export default function CustomerPortalPage() {
         </div>
       ) : (
         !isLoading && (
-          <div className="p-12 text-center text-slate-400 text-xs bg-white rounded-3xl border border-slate-100 shadow-sm">
+          <div className="p-10 text-center text-slate-400 text-xs bg-white rounded-xl border border-slate-200/80 shadow-xs">
             Please connect the backend API to load customer order profiles.
           </div>
         )

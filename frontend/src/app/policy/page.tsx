@@ -87,48 +87,48 @@ export default function PolicyRulesPage() {
       }}
     >
       {/* Header Banner Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100 flex flex-col gap-2 relative overflow-hidden">
+      <div className="bg-white rounded-xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col gap-2 relative overflow-hidden">
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-blue-50 text-[#3861FB] border border-blue-100 flex items-center gap-1.5">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-blue-50 text-[#3861FB] border border-blue-100 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-[#3861FB]" />
             Business Rule Specifications
           </span>
         </div>
-        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
-          <FileText className="w-6 h-6 text-[#3861FB]" />
+        <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <FileText className="w-5 h-5 text-[#3861FB]" />
           <span>Active Store Refund Policies & Constraints</span>
         </h2>
-        <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-3xl">
+        <p className="text-xs text-slate-500 leading-relaxed max-w-3xl">
           RevRescue pairs hardcoded deterministic boundaries (time, price, final sale flags) with Google Gemini Flash deliberation to ensure complete policy adherence with zero hallucinations.
         </p>
       </div>
 
       {/* Policy Cards List */}
       {isLoading ? (
-        <div className="p-12 text-center text-slate-400 text-xs bg-white rounded-3xl border border-slate-100 shadow-sm">
+        <div className="p-10 text-center text-slate-400 text-xs bg-white rounded-xl border border-slate-200/80 shadow-xs">
           Loading policy rules...
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3.5">
           {policies.map((p) => {
             const meta = getRuleDetails(p.code);
             const Icon = meta.icon;
             return (
               <div
                 key={p.code}
-                className="p-6 bg-white border border-slate-100 rounded-3xl shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow"
+                className="p-5 bg-white border border-slate-200/80 rounded-xl shadow-xs flex flex-col gap-2.5 hover:shadow-sm transition-shadow"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
                   <div className="flex items-center gap-2.5">
-                    <span className="font-mono text-xs font-bold text-[#3861FB] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+                    <span className="font-mono text-xs font-bold text-[#3861FB] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
                       {p.code}
                     </span>
                     <h3 className="font-bold text-sm text-slate-900">{p.name}</h3>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-400 font-medium">Default Outcome:</span>
-                    <span className={`inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full font-bold border ${meta.badge}`}>
+                    <span className="text-[11px] text-slate-400 font-medium">Default:</span>
+                    <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-bold border ${meta.badge}`}>
                       <Icon className="w-3.5 h-3.5" />
                       <span>{p.defaultOutcome}</span>
                     </span>
@@ -139,16 +139,16 @@ export default function PolicyRulesPage() {
                   {p.description}
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-slate-600">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Enforcement Layer:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-1">
+                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-600">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Enforcement Layer:</span>
                     <span className="font-bold text-slate-800">{meta.type}</span>
                     <span className="block text-[11px] text-slate-500 mt-0.5">{meta.tradeoff}</span>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-slate-600 flex flex-col justify-between">
+                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-600 flex flex-col justify-between">
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Test Persona:</span>
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Test Persona:</span>
                       <span className="font-bold text-slate-800">{meta.testedBy}</span>
                     </div>
                     <Link

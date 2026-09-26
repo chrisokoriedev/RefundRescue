@@ -384,7 +384,7 @@ export function DealDeckShell({
     <div className="min-h-screen w-full bg-[#F3F4F9] text-slate-800 flex antialiased selection:bg-[#3861FB]/20 selection:text-[#3861FB]">
       
       {/* ── 1. Drawer Sticks to Left Edge (Fixed Full-Height Sidebar) ── */}
-      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 xl:w-72 h-screen z-30 bg-white border-r border-slate-200/80 flex-col overflow-y-auto">
+      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 xl:w-72 h-screen z-40 bg-white border-r border-slate-200/80 flex-col overflow-y-auto">
         {sidebarContent}
       </aside>
 
@@ -402,7 +402,7 @@ export function DealDeckShell({
       <div className="flex-1 w-full lg:pl-64 xl:pl-72 flex flex-col min-h-screen">
         
         {/* ── 3. Top Panel Sticks Directly to Top (Sticky Header) ── */}
-        <header className="sticky top-0 z-20 w-full bg-[#F3F4F9]/90 backdrop-blur-md border-b border-slate-200/70 px-5 sm:px-8 py-3.5 flex items-center justify-between transition-shadow">
+        <header className="sticky top-0 z-30 w-full bg-[#F3F4F9]/95 backdrop-blur-md border-b border-slate-200/70 px-5 sm:px-8 py-3.5 flex items-center justify-between transition-shadow">
           <div className="flex items-center gap-3">
             <button
               type="button"

@@ -14,7 +14,7 @@ export function CustomerGrowthBubbles() {
   ];
 
   return (
-    <div className="bg-white rounded-xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col justify-between">
+    <div className="bg-white rounded-xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col justify-between overflow-hidden">
       
       {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-4">
@@ -44,22 +44,22 @@ export function CustomerGrowthBubbles() {
         <div className="relative w-40 h-36 flex items-center justify-center flex-shrink-0">
           
           {/* Main Top-Right Bubble: 2.417 */}
-          <div className="absolute top-2 right-4 w-20 h-20 rounded-full bg-[#3861FB] text-white flex items-center justify-center font-bold text-xs shadow-xs z-20 hover:scale-105 transition-transform cursor-pointer">
+          <div className="absolute top-2 right-4 w-20 h-20 rounded-full bg-[#3861FB] text-white flex items-center justify-center font-bold text-xs shadow-xs z-[2] hover:scale-105 transition-transform cursor-pointer">
             2.417
           </div>
 
           {/* Bottom-Left Bubble: 2.281 */}
-          <div className="absolute bottom-1 left-2 w-20 h-20 rounded-full bg-[#4A72FF] text-white flex items-center justify-center font-bold text-xs shadow-xs z-10 hover:scale-105 transition-transform cursor-pointer">
+          <div className="absolute bottom-1 left-2 w-20 h-20 rounded-full bg-[#4A72FF] text-white flex items-center justify-center font-bold text-xs shadow-xs z-[1] hover:scale-105 transition-transform cursor-pointer">
             2.281
           </div>
 
           {/* Top-Left Small Bubble: 287 */}
-          <div className="absolute top-4 left-3 w-12 h-12 rounded-full bg-[#8EA8FF] text-white flex items-center justify-center font-bold text-[11px] shadow-xs z-30 hover:scale-105 transition-transform cursor-pointer">
+          <div className="absolute top-4 left-3 w-12 h-12 rounded-full bg-[#8EA8FF] text-white flex items-center justify-center font-bold text-[11px] shadow-xs z-[4] hover:scale-105 transition-transform cursor-pointer">
             287
           </div>
 
           {/* Bottom-Right Small Bubble: 812 */}
-          <div className="absolute bottom-3 right-6 w-12 h-12 rounded-full bg-[#6287FF] text-white flex items-center justify-center font-bold text-[11px] shadow-xs z-25 hover:scale-105 transition-transform cursor-pointer">
+          <div className="absolute bottom-3 right-6 w-12 h-12 rounded-full bg-[#6287FF] text-white flex items-center justify-center font-bold text-[11px] shadow-xs z-[3] hover:scale-105 transition-transform cursor-pointer">
             812
           </div>
 

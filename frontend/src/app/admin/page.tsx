@@ -58,7 +58,7 @@ export default function AdminDashboardPage() {
       type="button"
       onClick={loadData}
       disabled={isLoading}
-      className="px-4 py-2 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200/80 shadow-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+      className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200/80 shadow-2xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
     >
       <RefreshCw className={`w-3.5 h-3.5 text-[#3861FB] ${isLoading ? 'animate-spin' : ''}`} />
       <span>Refresh Data</span>
@@ -77,14 +77,14 @@ export default function AdminDashboardPage() {
       headerActions={headerActions}
     >
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between shadow-xs">
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0" />
             <span>{error}</span>
           </div>
           <button
             onClick={loadData}
-            className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-xs font-bold transition-colors cursor-pointer"
           >
             Retry Connection
           </button>
@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Row 3: Ticket Queue Table (DealDeck style) */}
+      {/* Row 3: Ticket Queue Table (With Pagination at the bottom) */}
       <div id="tickets">
         <TicketTable
           tickets={tickets}

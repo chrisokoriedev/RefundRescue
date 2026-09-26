@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { RefundTicket } from '../../lib/refundApi';
 import { DecisionBadge } from '../refund/DecisionBadge';
 import { ShieldAlert, Search, Eye, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight } from 'lucide-react';
@@ -18,10 +18,25 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(8);
 
-  // Reset to first page whenever search or filters change
-  useEffect(() => {
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
     setCurrentPage(1);
-  }, [statusFilter, riskFilter, searchQuery, pageSize]);
+  };
+
+  const handleRiskFilterChange = (risk: string) => {
+    setRiskFilter(risk);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
 
   const filteredTickets = tickets.filter((t) => {
     if (statusFilter !== 'ALL' && t.decision !== statusFilter) return false;
@@ -63,7 +78,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
               <button
                 key={status}
                 type="button"
-                onClick={() => setStatusFilter(status)}
+                onClick={() => handleStatusFilterChange(status)}
                 className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
                   statusFilter === status
                     ? 'bg-white text-slate-900 shadow-2xs font-bold'
@@ -81,7 +96,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
               <button
                 key={risk}
                 type="button"
-                onClick={() => setRiskFilter(risk)}
+                onClick={() => handleRiskFilterChange(risk)}
                 className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
                   riskFilter === risk
                     ? 'bg-slate-900 text-white shadow-2xs font-bold'
@@ -99,7 +114,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search customer, ID..."
               className="w-full bg-slate-50 hover:bg-slate-100/70 border border-slate-200/80 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#3861FB] focus:bg-white transition-all font-medium"
             />
@@ -222,7 +237,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
             <span className="text-slate-400 text-[11px]">Rows:</span>
             <select
               value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
               className="bg-slate-50 border border-slate-200 text-slate-800 text-[11px] font-semibold rounded-md px-2 py-0.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#3861FB]"
             >
               <option value={5}>5</option>
