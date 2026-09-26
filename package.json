@@ -1,5 +1,14 @@
 {
+  "name": "revrescue-workspace",
+  "version": "1.0.0",
+  "description": "RevRescue: AI-Powered Customer Support Refund System (WORKNOON Assessment)",
+  "private": true,
+  "scripts": {
+    "dev": "npx concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix backend run test"
+  },
   "devDependencies": {
-    "@types/uuid": "^10.0.0"
+    "concurrently": "^9.1.2"
   }
 }
