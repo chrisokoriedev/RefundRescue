@@ -33,7 +33,7 @@
 - Consumes: Node.js 24 `node:sqlite` module.
 - Produces: `getDb()`, `initDatabase()`, `seedDatabase()`, `Customer`, `Order`, `OrderItem`, `RefundTicket`, `AuditLog` types.
 
-- [ ] **Step 1: Install `@google/genai` in backend package.json**
+- [x] **Step 1: Install `@google/genai` in backend package.json**
 
 Run:
 ```bash
@@ -41,7 +41,7 @@ npm install @google/genai
 ```
 in `c:\Users\chrisokoriedev\Documents\work\RevRescue\backend`.
 
-- [ ] **Step 2: Write failing database test**
+- [x] **Step 2: Write failing database test**
 
 Create `backend/tests/db.test.ts`:
 ```typescript
@@ -82,20 +82,20 @@ describe('SQLite Database Layer', () => {
 });
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `npm test tests/db.test.ts` in `backend`. Expected: FAIL with module not found.
 
-- [ ] **Step 4: Implement `seedData.ts` and `sqlite.ts`**
+- [x] **Step 4: Implement `seedData.ts` and `sqlite.ts`**
 
 Create `backend/src/db/seedData.ts` with the 15 personas (`CUST-101` to `CUST-115`), complete order items with prices, final sale flags, and dates.
 Create `backend/src/db/sqlite.ts` with table DDL (`customers`, `orders`, `order_items`, `refund_tickets`, `audit_logs`) and seeding routines using `DatabaseSync` from `node:sqlite`.
 
-- [ ] **Step 5: Run database tests to verify they pass**
+- [x] **Step 5: Run database tests to verify they pass**
 
 Run: `npm test tests/db.test.ts` in `backend`. Expected: PASS (15 customers, orders, items loaded).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/package.json backend/package-lock.json backend/src/db backend/tests/db.test.ts
@@ -114,7 +114,7 @@ git commit -m "feat(backend): implement SQLite database schema and seed 15 custo
 - Consumes: Customer input text string.
 - Produces: `scanForPromptInjection(input: string): { isFlagged: boolean; riskLevel: 'LOW' | 'MEDIUM' | 'HIGH'; matchedPatterns: string[]; sanitizedInput: string }`
 
-- [ ] **Step 1: Write failing guardrail test**
+- [x] **Step 1: Write failing guardrail test**
 
 Create `backend/tests/guardrail.test.ts`:
 ```typescript
@@ -148,19 +148,19 @@ describe('Security Guardrail Service', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npm test tests/guardrail.test.ts`. Expected: FAIL with module not found.
 
-- [ ] **Step 3: Implement `guardrailService.ts`**
+- [x] **Step 3: Implement `guardrailService.ts`**
 
 Create `backend/src/services/guardrailService.ts` implementing multi-category pattern regexes (Instruction Overrides, Role Inversion, Delimiter Spoofing, Secret Leaks) and string sanitization.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npm test tests/guardrail.test.ts`. Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/src/services/guardrailService.ts backend/tests/guardrail.test.ts
@@ -179,7 +179,7 @@ git commit -m "feat(security): implement prompt injection detection and sanitiza
 - Consumes: `Order`, `OrderItem[]`, `Customer`, requested amount, requested reason.
 - Produces: `evaluateDeterministicPolicy(context: PolicyContext): PolicyPreCheckResult` with outcomes `PRE_APPROVED`, `DENIED`, or `ESCALATED`, along with violated policy codes (`POL-001`, `POL-002`, `POL-003`).
 
-- [ ] **Step 1: Write failing policy engine test**
+- [x] **Step 1: Write failing policy engine test**
 
 Create `backend/tests/policyEngine.test.ts`:
 ```typescript
@@ -226,19 +226,19 @@ describe('Deterministic Policy Engine', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npm test tests/policyEngine.test.ts`. Expected: FAIL with module not found.
 
-- [ ] **Step 3: Implement `policyEngine.ts`**
+- [x] **Step 3: Implement `policyEngine.ts`**
 
 Create `backend/src/services/policyEngine.ts` enforcing `POL-001`, `POL-002`, `POL-003`, `POL-004`, and `POL-005` business rules.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npm test tests/policyEngine.test.ts`. Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/src/services/policyEngine.ts backend/tests/policyEngine.test.ts
@@ -258,7 +258,7 @@ git commit -m "feat(policy): implement deterministic policy validation engine (P
 - Consumes: Customer input, order context, deterministic pre-check, guardrail result.
 - Produces: `evaluateRefundRequest(request: RefundEvaluationRequest): Promise<RefundEvaluationResult>` returning `ticketId`, `decision` (`APPROVED` | `DENIED` | `ESCALATED`), `confidenceScore`, `customerResponse`, `internalReasoning`, `policyClauses`, and storing to SQLite database.
 
-- [ ] **Step 1: Write failing refund orchestration test**
+- [x] **Step 1: Write failing refund orchestration test**
 
 Create `backend/tests/refundService.test.ts`:
 ```typescript
@@ -316,20 +316,20 @@ describe('Refund Evaluation Orchestrator', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npm test tests/refundService.test.ts`. Expected: FAIL.
 
-- [ ] **Step 3: Implement `geminiService.ts` and `refundService.ts`**
+- [x] **Step 3: Implement `geminiService.ts` and `refundService.ts`**
 
 - `backend/src/services/geminiService.ts`: Uses `@google/genai` (or graceful heuristic simulation if `GEMINI_API_KEY` is not present) to generate empathetic customer messages, confidence scores, and structured JSON deliberation.
 - `backend/src/services/refundService.ts`: Coordinates Guardrail Scanner -> Deterministic Screener -> Gemini Deliberator -> Post-Verification Gate -> SQLite Insertion.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npm test tests/refundService.test.ts`. Expected: PASS (all 4 test cases pass with correct decisions).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/src/services/geminiService.ts backend/src/services/refundService.ts backend/tests/refundService.test.ts
@@ -361,11 +361,11 @@ git commit -m "feat(ai): implement Gemini Flash deliberation service and refund 
   - `GET /api/admin/tickets`
   - `POST /api/admin/tickets/:id/override`
 
-- [ ] **Step 1: Write integration tests for API endpoints**
+- [x] **Step 1: Write integration tests for API endpoints**
 
 Create `backend/tests/api.test.ts` using `supertest` to test customer listing, refund evaluation endpoint, admin ticket query, and manual override.
 
-- [ ] **Step 2: Implement controllers and router**
+- [x] **Step 2: Implement controllers and router**
 
 Implement:
 - `backend/src/controllers/customerController.ts`
@@ -373,15 +373,15 @@ Implement:
 - `backend/src/controllers/adminController.ts`
 - `backend/src/routes/refundApi.ts`
 
-- [ ] **Step 3: Mount routes in `backend/src/server.ts` and auto-initialize SQLite**
+- [x] **Step 3: Mount routes in `backend/src/server.ts` and auto-initialize SQLite**
 
 Update `backend/src/server.ts` to initialize `initDatabase()` and `seedDatabase()`, and mount `/api` endpoints with CORS and health checks.
 
-- [ ] **Step 4: Run API tests to verify they pass**
+- [x] **Step 4: Run API tests to verify they pass**
 
 Run: `npm test tests/api.test.ts`. Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/src/controllers backend/src/routes/refundApi.ts backend/src/server.ts backend/tests/api.test.ts
@@ -404,26 +404,26 @@ git commit -m "feat(api): implement REST API routes for customer, refund deliber
 - Consumes: Backend REST endpoints at `http://localhost:5000/api`.
 - Produces: Interactive customer refund portal with persona switcher across 15 customers, order selector with item details and return status, conversational chat, and live policy decision display.
 
-- [ ] **Step 1: Create API client service in `frontend/src/lib/api.ts`**
+- [x] **Step 1: Create API client service in `frontend/src/lib/api.ts`**
 
 Typesafe fetch wrappers for fetching customers, order details, policy rules, submitting refund requests, and fetching admin metrics/tickets.
 
-- [ ] **Step 2: Build UI components**
+- [x] **Step 2: Build UI components**
 
 - `PersonaSwitcher.tsx`: Dropdown / pill selector with all 15 test personas, avatars, tags (e.g. "Damaged", "Final Sale", "High Value", "Attacker").
 - `OrderSelector.tsx`: Order summary cards with items, prices, purchase dates, and `Final Sale` tags.
 - `DecisionBadge.tsx`: Visual badge for `APPROVED` (green), `DENIED` (red), `ESCALATED` (amber) with confidence scores and policy badges.
 - `RefundChat.tsx`: Clean chat interface with message bubbles, typing indicators, and visible structured AI response cards.
 
-- [ ] **Step 3: Integrate components into `frontend/src/app/page.tsx`**
+- [x] **Step 3: Integrate components into `frontend/src/app/page.tsx`**
 
 Compose the Customer Portal with header, Persona Switcher, Order viewer, and Refund Chat.
 
-- [ ] **Step 4: Verify frontend builds without errors**
+- [x] **Step 4: Verify frontend builds without errors**
 
 Run: `npm run build` in `frontend`. Expected: Successful Next.js build.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/components frontend/src/lib/api.ts frontend/src/app/page.tsx
@@ -446,26 +446,26 @@ git commit -m "feat(frontend): build customer portal with persona switcher, orde
 - Consumes: Admin endpoints (`/api/admin/metrics`, `/api/admin/tickets`, `/api/admin/tickets/:id/override`).
 - Produces: Admin dashboard with KPI cards, searchable and filterable ticket queue, slide-over audit drawer with raw prompt/reasoning/injection flags, and one-click manual supervisor overrides.
 
-- [ ] **Step 1: Create Admin components**
+- [x] **Step 1: Create Admin components**
 
 - `MetricsCards.tsx`: Total Claims, Approval Rate, Escalation Queue, Average Amount.
 - `TicketTable.tsx`: Filterable table with Customer, Order, Requested Amount, AI Decision, Risk Badge, and Timestamp.
 - `AuditDrawer.tsx`: Slide-over showing prompt trace, deterministic checks, injection warnings, and audit log history.
 - `OverrideModal.tsx`: Dialog allowing supervisor to override decision with mandatory notes.
 
-- [ ] **Step 2: Create Admin page `frontend/src/app/admin/page.tsx`**
+- [x] **Step 2: Create Admin page `frontend/src/app/admin/page.tsx`**
 
 Compose metrics, table, drawer, and modal with live refresh capabilities.
 
-- [ ] **Step 3: Create Policy Inspector `frontend/src/app/policy/page.tsx`**
+- [x] **Step 3: Create Policy Inspector `frontend/src/app/policy/page.tsx`**
 
 Visual breakdown of the 5 business rules (`POL-001` to `POL-005`) with interactive test tips.
 
-- [ ] **Step 4: Verify frontend build**
+- [x] **Step 4: Verify frontend build**
 
 Run: `npm run build` in `frontend`. Expected: Successful build.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/app/admin frontend/src/components/admin frontend/src/app/policy
@@ -491,23 +491,23 @@ git commit -m "feat(frontend): implement admin dashboard, audit drawer, supervis
   - Root `npm run dev` running both concurrently on local machine with zero Docker required.
   - Comprehensive `README.md` covering setup, env variables, architecture, AI integration, trade-offs, and 15 persona test matrix.
 
-- [ ] **Step 1: Create `backend/Dockerfile` and `frontend/Dockerfile`**
+- [x] **Step 1: Create `backend/Dockerfile` and `frontend/Dockerfile`**
 
 Multi-stage Alpine Dockerfiles with optimized caching and non-root execution.
 
-- [ ] **Step 2: Create root `docker-compose.yml`**
+- [x] **Step 2: Create root `docker-compose.yml`**
 
 Configures `revrescue-backend` and `revrescue-frontend` with volume persistence and health checks.
 
-- [ ] **Step 3: Setup root `package.json` with `concurrently`**
+- [x] **Step 3: Setup root `package.json` with `concurrently`**
 
 Configure root `package.json` so running `npm install && npm run dev` starts both backend and frontend locally in one terminal window.
 
-- [ ] **Step 4: Create master root `README.md`**
+- [x] **Step 4: Create master root `README.md`**
 
 Complete documentation matching all WORKNOON evaluation requirements (Setup guides, Architecture, AI Deliberation, Trade-offs & Assumptions, Reviewer Test Matrix, and Demo walkthrough script link).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/Dockerfile frontend/Dockerfile docker-compose.yml package.json .env.example README.md
@@ -524,17 +524,17 @@ git commit -m "feat(ops): add Dockerfile configs, docker-compose orchestration, 
 - Verify prompt injection attack (`CUST-106`) is blocked/escalated.
 - Verify manual supervisor override updates the ticket and audit log.
 
-- [ ] **Step 1: Run all backend automated tests**
+- [x] **Step 1: Run all backend automated tests**
 
 Run: `npm test` in `backend`. Expected: All test suites PASS.
 
-- [ ] **Step 2: Start local servers and verify health checks**
+- [x] **Step 2: Start local servers and verify health checks**
 
 Verify `http://localhost:5000/health` returns status `ok`.
 Verify `http://localhost:3000` loads the customer portal.
 Verify `http://localhost:3000/admin` loads the admin dashboard.
 
-- [ ] **Step 3: Execute persona test matrix**
+- [x] **Step 3: Execute persona test matrix**
 
 Test:
 - `CUST-101` (Damaged cookware) -> `APPROVED`
@@ -544,7 +544,7 @@ Test:
 - `CUST-106` (Hacker Eve prompt injection) -> `ESCALATED / FLAGGED`
 - Admin override of `CUST-104` to `APPROVED` with note.
 
-- [ ] **Step 4: Final commit and verification summary**
+- [x] **Step 4: Final commit and verification summary**
 
 ```bash
 git commit --allow-empty -m "chore(release): complete AI-powered customer support refund system verification"
