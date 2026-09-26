@@ -8,6 +8,8 @@ import { pingDatabase, getPoolStats } from './db/pool.js';
 import { createLogger } from './middleware/logger.js';
 
 import apiRoutes from './routes/api.js';
+import refundApi from './routes/refundApi.js';
+import { initDatabase, seedDatabase } from './db/sqlite.js';
 import playbookRoutes from './routes/playbooks.js';
 import exportRoutes from './routes/exports.js';
 import authRoutes from './routes/auth.js';
@@ -112,6 +114,11 @@ app.use('/api/v1/playbooks', playbookRoutes);
 app.use('/api/v1/exports', exportRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1', apiRoutes);
+
+// ── AI Refund System Routes ──
+initDatabase();
+seedDatabase();
+app.use('/api', refundApi);
 
 // ── Backward-compatible aliases ──
 app.use('/api/playbooks', playbookRoutes);
