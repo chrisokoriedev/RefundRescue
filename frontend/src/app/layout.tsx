@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
-import { ServiceWorkerKiller } from "@/components/sw-killer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RevRescue — Revenue Recovery Dashboard",
-  description: "AI-powered voice recovery platform for SaaS revenue retention",
+  title: "RevRescue — AI Refund Evaluation System",
+  description: "AI-powered customer support refund system with hybrid deterministic + Gemini policy deliberation",
 };
 
 export default function RootLayout({
@@ -35,7 +34,6 @@ export default function RootLayout({
       <body className="min-h-full bg-background text-foreground" suppressHydrationWarning>
         <ThemeProvider defaultTheme="dark">
           <TooltipProvider>
-            <ServiceWorkerKiller />
             {children}
             <Toaster richColors position="top-right" />
           </TooltipProvider>

@@ -1,3 +1,8 @@
+// Base URL of the backend API.
+// - Local dev: http://localhost:5000 (default)
+// - Docker: NEXT_PUBLIC_API_URL is baked at build time and must point at the
+//   host-exposed port (http://localhost:5000), since API calls happen in the
+//   browser, not on the Docker network.
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export interface Customer {
