@@ -1,1 +1,9 @@
-node_modules
+node_modules/
+.next/
+dist/
+build/
+backend/data/
+*.db
+.env
+.env.local
+.freebuff/
