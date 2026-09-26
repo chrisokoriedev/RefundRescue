@@ -13,7 +13,7 @@ export function getCustomers(req: Request, res: Response) {
 
 export function getCustomerById(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const db = getDb();
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id);
 
@@ -35,7 +35,7 @@ export function getCustomerById(req: Request, res: Response) {
 
 export function getOrderById(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const db = getDb();
     const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id) as any;
 

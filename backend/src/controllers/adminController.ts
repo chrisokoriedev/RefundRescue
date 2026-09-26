@@ -47,7 +47,9 @@ export function getMetrics(req: Request, res: Response) {
 
 export function getTickets(req: Request, res: Response) {
   try {
-    const { status, riskLevel, limit = 50, offset = 0 } = req.query;
+    const { limit = 50, offset = 0 } = req.query;
+    const status = req.query.status ? String(req.query.status) : undefined;
+    const riskLevel = req.query.riskLevel ? String(req.query.riskLevel) : undefined;
     const db = getDb();
 
     let query = `
@@ -99,14 +101,14 @@ export function getTicketById(req: Request, res: Response) {
       JOIN customers c ON t.customer_id = c.id
       JOIN orders o ON t.order_id = o.id
       WHERE t.id = ?
-    `).get(id) as any;
+    `).get(String(id)) as any;
 
     if (!ticket) {
       return res.status(404).json({ success: false, error: 'Ticket not found' });
     }
 
     const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(ticket.order_id);
-    const auditLogs = db.prepare('SELECT * FROM audit_logs WHERE ticket_id = ? ORDER BY created_at ASC').all(id);
+    const auditLogs = db.prepare('SELECT * FROM audit_logs WHERE ticket_id = ? ORDER BY created_at ASC').all(String(id));
 
     return res.json({
       success: true,
@@ -125,7 +127,7 @@ export function getTicketById(req: Request, res: Response) {
 
 export function overrideTicket(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const { decision, notes } = req.body;
 
     if (!decision || !['APPROVED', 'DENIED', 'ESCALATED'].includes(decision)) {
