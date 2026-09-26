@@ -10,6 +10,7 @@ import refundApi from './routes/refundApi.js';
 import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { requestId } from './middleware/requestId.js';
+import { rateLimiter } from './middleware/rateLimiter.js';
 
 const log = createLogger('server');
 
@@ -23,13 +24,27 @@ app.use(helmet());
 
 // ── Global middleware ──
 app.use(cors({
-  origin: config.corsOrigins,
+  origin: (origin, callback) => {
+    // Allow same-origin/no-origin (curl, health checks) and whitelisted origins.
+    // Outside production, allow any localhost port so the Next.js dev server
+    // works even when it binds to a random port.
+    const isAllowed =
+      !origin ||
+      config.corsOrigins.includes(origin) ||
+      (process.env.NODE_ENV !== 'production' && /^https?:\/\/localhost(:\d+)?$/.test(origin));
+
+    if (isAllowed) return callback(null, true);
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
 }));
 app.use(requestId);
 app.use(requestLogger);
+
+// ── Global rate limit: general API budget (AI endpoint has its own tighter limit) ──
+app.use(rateLimiter({ windowMs: 60_000, max: 100 }));
 
 // ── JSON body parser with size limit ──
 app.use(express.json({ limit: '1mb' }));

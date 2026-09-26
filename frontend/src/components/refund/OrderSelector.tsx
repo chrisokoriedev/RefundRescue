@@ -9,7 +9,22 @@ interface OrderSelectorProps {
 }
 
 export function OrderSelector({ orders, selectedOrderId, onSelectOrder }: OrderSelectorProps) {
-  if (!orders || orders.length === 0) {
+  const selectedOrder = orders && orders.length > 0
+    ? (orders.find(o => o.id === selectedOrderId) || orders[0])
+    : null;
+
+  const [daysAgo, setDaysAgo] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!selectedOrder?.order_date) return;
+    const timer = setTimeout(() => {
+      const diff = Date.now() - new Date(selectedOrder.order_date).getTime();
+      setDaysAgo(Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24))));
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [selectedOrder?.order_date]);
+
+  if (!orders || orders.length === 0 || !selectedOrder) {
     return (
       <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6 text-center text-zinc-400 text-xs">
         No orders found for this persona.
@@ -17,14 +32,6 @@ export function OrderSelector({ orders, selectedOrderId, onSelectOrder }: OrderS
     );
   }
 
-  const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0];
-
-  const getDaysAgo = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24));
-  };
-
-  const daysAgo = getDaysAgo(selectedOrder.order_date);
   const isExpired = daysAgo > 30;
   const isHighValue = selectedOrder.total_amount > 500;
   const hasFinalSale = selectedOrder.items?.some(i => i.is_final_sale === 1);

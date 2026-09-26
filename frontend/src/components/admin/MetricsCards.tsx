@@ -1,6 +1,6 @@
 import React from 'react';
 import { AdminMetrics } from '../../lib/refundApi';
-import { TrendingUp, CheckCircle2, XCircle, AlertTriangle, ShieldAlert, DollarSign, Activity } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ShieldAlert, Activity } from 'lucide-react';
 
 interface MetricsCardsProps {
   metrics: AdminMetrics | null;

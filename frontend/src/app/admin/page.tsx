@@ -7,7 +7,7 @@ import { TicketTable } from '../../components/admin/TicketTable';
 import { AuditDrawer } from '../../components/admin/AuditDrawer';
 import { OverrideModal } from '../../components/admin/OverrideModal';
 import { AdminMetrics, RefundTicket, fetchAdminMetrics, fetchAdminTickets } from '../../lib/refundApi';
-import { LayoutDashboard, RefreshCw, ShieldAlert, Sparkles, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, RefreshCw, ShieldAlert, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminDashboardPage() {
@@ -21,11 +21,7 @@ export default function AdminDashboardPage() {
   const [overrideTarget, setOverrideTarget] = useState<RefundTicket | null>(null);
   const [isOverrideOpen, setIsOverrideOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -35,12 +31,20 @@ export default function AdminDashboardPage() {
       ]);
       setMetrics(metricsData);
       setTickets(ticketsData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to connect to backend API on port 5000.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to connect to backend API on port 5000.';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadData]);
 
   const handleOpenOverride = (ticket: RefundTicket) => {
     setOverrideTarget(ticket);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { RefundTicket, fetchAdminTicketById } from '../../lib/refundApi';
 import { DecisionBadge } from '../refund/DecisionBadge';
-import { X, ShieldAlert, Clock, User, Package, History, ArrowRightLeft, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, ShieldAlert, User, Package, History, ArrowRightLeft, Sparkles } from 'lucide-react';
 
 interface AuditDrawerProps {
   ticketId: string | null;
@@ -15,25 +15,33 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (ticketId) {
-      loadTicket(ticketId);
-    } else {
-      setTicket(null);
-    }
-  }, [ticketId]);
+    let ignore = false;
+    if (!ticketId) return;
 
-  const loadTicket = async (id: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await fetchAdminTicketById(id);
-      setTicket(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load ticket audit details');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const timer = setTimeout(() => {
+      setIsLoading(true);
+      setError(null);
+      fetchAdminTicketById(ticketId)
+        .then((data) => {
+          if (!ignore) {
+            setTicket(data);
+            setIsLoading(false);
+          }
+        })
+        .catch((err: unknown) => {
+          if (!ignore) {
+            const msg = err instanceof Error ? err.message : 'Failed to load ticket audit details';
+            setError(msg);
+            setIsLoading(false);
+          }
+        });
+    }, 0);
+
+    return () => {
+      ignore = true;
+      clearTimeout(timer);
+    };
+  }, [ticketId]);
 
   if (!ticketId) return null;
 
@@ -128,7 +136,7 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                   Customer Claim Reason:
                 </span>
                 <div className="p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-200 italic">
-                  "{ticket.reason}"
+                  &quot;{ticket.reason}&quot;
                 </div>
               </div>
 

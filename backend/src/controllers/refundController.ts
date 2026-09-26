@@ -1,23 +1,17 @@
 import { Request, Response } from 'express';
 import { evaluateRefundRequest } from '../services/refundService.js';
 import { STORE_POLICIES } from '../services/policyEngine.js';
+import { NotFoundError } from '../middleware/errorHandler.js';
 
 export async function evaluateRefund(req: Request, res: Response) {
+  const { customerId, orderId, message, requestedAmount } = req.body; // validated by Zod middleware
+
   try {
-    const { customerId, orderId, message, requestedAmount } = req.body;
-
-    if (!customerId || !orderId || !message) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: customerId, orderId, and message are required.'
-      });
-    }
-
     const result = await evaluateRefundRequest({
       customerId,
       orderId,
       message,
-      requestedAmount: requestedAmount ? Number(requestedAmount) : undefined
+      requestedAmount
     });
 
     return res.status(200).json({
@@ -25,10 +19,11 @@ export async function evaluateRefund(req: Request, res: Response) {
       data: result
     });
   } catch (error: any) {
-    return res.status(error.message?.includes('not found') ? 404 : 500).json({
-      success: false,
-      error: error.message || 'Internal server error during refund evaluation'
-    });
+    // Map known domain errors to proper status codes
+    if (/Customer not found|Order not found/i.test(error?.message || '')) {
+      throw new NotFoundError('Resource', error.message);
+    }
+    throw error;
   }
 }
 

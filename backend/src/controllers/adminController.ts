@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getDb } from '../db/sqlite.js';
 import { v4 as uuidv4 } from 'uuid';
+import { NotFoundError } from '../middleware/errorHandler.js';
 
 export function getMetrics(req: Request, res: Response) {
   try {
@@ -104,7 +105,7 @@ export function getTicketById(req: Request, res: Response) {
     `).get(String(id)) as any;
 
     if (!ticket) {
-      return res.status(404).json({ success: false, error: 'Ticket not found' });
+      throw new NotFoundError('Ticket', String(id));
     }
 
     const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(ticket.order_id);
@@ -126,61 +127,44 @@ export function getTicketById(req: Request, res: Response) {
 }
 
 export function overrideTicket(req: Request, res: Response) {
-  try {
-    const id = String(req.params.id);
-    const { decision, notes } = req.body;
+  const id = String(req.params.id);
+  // decision + notes validated by Zod middleware
+  const { decision, notes } = req.body;
 
-    if (!decision || !['APPROVED', 'DENIED', 'ESCALATED'].includes(decision)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Valid decision (APPROVED, DENIED, ESCALATED) is required for override.'
-      });
-    }
-
-    if (!notes || typeof notes !== 'string' || notes.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Mandatory supervisor audit notes are required for override.'
-      });
-    }
-
-    const db = getDb();
-    const existing = db.prepare('SELECT * FROM refund_tickets WHERE id = ?').get(id) as any;
-    if (!existing) {
-      return res.status(404).json({ success: false, error: 'Ticket not found' });
-    }
-
-    const now = new Date().toISOString();
-
-    // Update ticket
-    db.prepare(`
-      UPDATE refund_tickets
-      SET decision = ?, updated_at = ?
-      WHERE id = ?
-    `).run(decision, now, id);
-
-    // Insert audit log
-    const auditId = `AUD-${uuidv4().substring(0, 8).toUpperCase()}`;
-    const action = `OVERRIDE_${decision}`;
-    const formattedNotes = `Human supervisor override from ${existing.decision} to ${decision}. Reason: ${notes.trim()}`;
-
-    db.prepare(`
-      INSERT INTO audit_logs (id, ticket_id, actor, action, notes, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(auditId, id, 'HUMAN_SUPERVISOR', action, formattedNotes, now);
-
-    return res.json({
-      success: true,
-      message: `Ticket successfully overridden to ${decision}`,
-      data: {
-        ticketId: id,
-        previousDecision: existing.decision,
-        newDecision: decision,
-        notes: formattedNotes,
-        updatedAt: now
-      }
-    });
-  } catch (error: any) {
-    return res.status(500).json({ success: false, error: error.message });
+  const db = getDb();
+  const existing = db.prepare('SELECT * FROM refund_tickets WHERE id = ?').get(id) as any;
+  if (!existing) {
+    throw new NotFoundError('Ticket', id);
   }
+
+  const now = new Date().toISOString();
+
+  // Update ticket
+  db.prepare(`
+    UPDATE refund_tickets
+    SET decision = ?, updated_at = ?
+    WHERE id = ?
+  `).run(decision, now, id);
+
+  // Insert audit log
+  const auditId = `AUD-${uuidv4().substring(0, 8).toUpperCase()}`;
+  const action = `OVERRIDE_${decision}`;
+  const formattedNotes = `Human supervisor override from ${existing.decision} to ${decision}. Reason: ${notes.trim()}`;
+
+  db.prepare(`
+    INSERT INTO audit_logs (id, ticket_id, actor, action, notes, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(auditId, id, 'HUMAN_SUPERVISOR', action, formattedNotes, now);
+
+  return res.json({
+    success: true,
+    message: `Ticket successfully overridden to ${decision}`,
+    data: {
+      ticketId: id,
+      previousDecision: existing.decision,
+      newDecision: decision,
+      notes: formattedNotes,
+      updatedAt: now
+    }
+  });
 }

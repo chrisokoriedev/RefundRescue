@@ -15,14 +15,45 @@ export class AppError extends Error {
   }
 }
 
+// ── Typed helpers — use these instead of bare throws ──
+export class NotFoundError extends AppError {
+  constructor(resource: string, identifier?: string) {
+    super(
+      identifier ? `${resource} not found: ${identifier}` : `${resource} not found`,
+      404
+    );
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message: string, errors?: Record<string, string[]>) {
+    super(message, 422, true, errors);
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(message, 409);
+  }
+}
+
 // ── Async Error Wrapper ──
-// Wraps async route handlers so unhandled rejections are forwarded to Express
-// instead of crashing the process with an unhandled promise rejection.
+// Wraps route handlers (sync or async) so any thrown error or unhandled
+// rejection is forwarded to Express's error pipeline instead of crashing
+// the process or hanging the request.
 export function asyncErrorWrapper(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
+  fn: (req: Request, res: Response, next: NextFunction) => any
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
-    fn(req, res, next).catch(next);
+    try {
+      const result = fn(req, res, next);
+      // If it's a promise (async handler), forward rejections to next()
+      if (result && typeof result.catch === 'function') {
+        result.catch(next);
+      }
+    } catch (err) {
+      next(err);
+    }
   };
 }
 

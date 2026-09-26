@@ -99,61 +99,65 @@ export default function PolicyRulesPage() {
         </div>
 
         {/* Policy Cards List */}
-        <div className="flex flex-col gap-4">
-          {policies.map((p) => {
-            const meta = getRuleDetails(p.code);
-            const Icon = meta.icon;
-            return (
-              <div
-                key={p.code}
-                className="p-5 bg-zinc-900/80 border border-zinc-800 rounded-2xl shadow-lg flex flex-col gap-3 hover:border-zinc-700/80 transition-all"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800/80 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="font-mono text-sm font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
-                      {p.code}
-                    </span>
-                    <h3 className="font-bold text-sm text-white">{p.name}</h3>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-zinc-400 font-medium">Default:</span>
-                    <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-semibold border ${meta.badge}`}>
-                      <Icon className="w-3.5 h-3.5" />
-                      <span>{p.defaultOutcome}</span>
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-zinc-300 leading-relaxed">
-                  {p.description}
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-                  <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80 text-zinc-400">
-                    <span className="text-[10px] uppercase font-bold text-zinc-500 block mb-0.5">Enforcement Layer:</span>
-                    <span className="font-medium text-zinc-200">{meta.type}</span>
-                    <span className="block text-[11px] text-zinc-500 mt-0.5">{meta.tradeoff}</span>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80 text-zinc-400 flex flex-col justify-between">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-zinc-500 block mb-0.5">Test Persona:</span>
-                      <span className="font-medium text-zinc-200">{meta.testedBy}</span>
+        {isLoading ? (
+          <div className="p-8 text-center text-zinc-500 text-xs">Loading policy rules...</div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {policies.map((p) => {
+              const meta = getRuleDetails(p.code);
+              const Icon = meta.icon;
+              return (
+                <div
+                  key={p.code}
+                  className="p-5 bg-zinc-900/80 border border-zinc-800 rounded-2xl shadow-lg flex flex-col gap-3 hover:border-zinc-700/80 transition-all"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800/80 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono text-sm font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
+                        {p.code}
+                      </span>
+                      <h3 className="font-bold text-sm text-white">{p.name}</h3>
                     </div>
-                    <Link
-                      href="/"
-                      className="inline-flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 mt-2 font-medium"
-                    >
-                      <span>Test in Customer Portal</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </Link>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-zinc-400 font-medium">Default:</span>
+                      <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-semibold border ${meta.badge}`}>
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{p.defaultOutcome}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    {p.description}
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                    <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80 text-zinc-400">
+                      <span className="text-[10px] uppercase font-bold text-zinc-500 block mb-0.5">Enforcement Layer:</span>
+                      <span className="font-medium text-zinc-200">{meta.type}</span>
+                      <span className="block text-[11px] text-zinc-500 mt-0.5">{meta.tradeoff}</span>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80 text-zinc-400 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-zinc-500 block mb-0.5">Test Persona:</span>
+                        <span className="font-medium text-zinc-200">{meta.testedBy}</span>
+                      </div>
+                      <Link
+                        href="/"
+                        className="inline-flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 mt-2 font-medium"
+                      >
+                        <span>Test in Customer Portal</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );

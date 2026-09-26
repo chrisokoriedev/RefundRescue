@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RefundTicket, overrideTicket } from '../../lib/refundApi';
 import { DecisionBadge } from '../refund/DecisionBadge';
-import { X, CheckCircle2, ShieldAlert, AlertCircle } from 'lucide-react';
+import { X, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface OverrideModalProps {
   isOpen: boolean;
@@ -35,8 +35,9 @@ export function OverrideModal({ isOpen, onClose, ticket, onSuccess }: OverrideMo
       });
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit override.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to submit override.';
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }

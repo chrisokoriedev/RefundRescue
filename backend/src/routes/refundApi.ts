@@ -2,23 +2,57 @@ import { Router } from 'express';
 import { getCustomers, getCustomerById, getOrderById } from '../controllers/customerController.js';
 import { evaluateRefund, getPolicies } from '../controllers/refundController.js';
 import { getMetrics, getTickets, getTicketById, overrideTicket } from '../controllers/adminController.js';
+import { asyncErrorWrapper } from '../middleware/errorHandler.js';
+import { idempotencyMiddleware } from '../middleware/idempotency.js';
+import { rateLimiter } from '../middleware/rateLimiter.js';
+import {
+  evaluateRefundSchema,
+  overrideTicketSchema,
+  ticketsQuerySchema,
+  idParamSchema,
+  validateBody,
+  validateQuery,
+  validateParams
+} from '../validators/schemas.js';
 
 const router = Router();
 
+// ── AI evaluation endpoint: tight budget (LLM cost) + idempotency support ──
+const evaluateLimiter = rateLimiter({
+  windowMs: 60_000,
+  max: 20,
+  keyGenerator: (req) => `evaluate:${req.ip}`,
+  message: 'Too many refund evaluations — the AI engine has a budget of 20 evaluations per minute per client.'
+});
+
 // Customer & Order routes
-router.get('/customers', getCustomers);
-router.get('/customers/:id', getCustomerById);
-router.get('/orders/:id', getOrderById);
+router.get('/customers', asyncErrorWrapper(getCustomers));
+router.get('/customers/:id', validateParams(idParamSchema), asyncErrorWrapper(getCustomerById));
+router.get('/orders/:id', validateParams(idParamSchema), asyncErrorWrapper(getOrderById));
 
 // Refund evaluation & Policy routes
-router.post('/refunds/evaluate', evaluateRefund);
-router.post('/refunds/chat', evaluateRefund); // aliases chat submissions to evaluation engine
+router.post('/refunds/evaluate',
+  evaluateLimiter,
+  idempotencyMiddleware,
+  validateBody(evaluateRefundSchema),
+  asyncErrorWrapper(evaluateRefund)
+);
+router.post('/refunds/chat',
+  evaluateLimiter,
+  idempotencyMiddleware,
+  validateBody(evaluateRefundSchema),
+  asyncErrorWrapper(evaluateRefund)
+); // alias: chat submissions use the same evaluation engine
 router.get('/policy/rules', getPolicies);
 
 // Admin & Support routes
-router.get('/admin/metrics', getMetrics);
-router.get('/admin/tickets', getTickets);
-router.get('/admin/tickets/:id', getTicketById);
-router.post('/admin/tickets/:id/override', overrideTicket);
+router.get('/admin/metrics', asyncErrorWrapper(getMetrics));
+router.get('/admin/tickets', validateQuery(ticketsQuerySchema), asyncErrorWrapper(getTickets));
+router.get('/admin/tickets/:id', validateParams(idParamSchema), asyncErrorWrapper(getTicketById));
+router.post('/admin/tickets/:id/override',
+  validateParams(idParamSchema),
+  validateBody(overrideTicketSchema),
+  asyncErrorWrapper(overrideTicket)
+);
 
 export default router;

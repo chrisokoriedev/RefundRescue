@@ -176,7 +176,10 @@ export async function fetchAdminTicketById(id: string): Promise<RefundTicket> {
   return json.data;
 }
 
-export async function overrideTicket(id: string, payload: { decision: string; notes: string }): Promise<any> {
+export async function overrideTicket(
+  id: string,
+  payload: { decision: string; notes: string }
+): Promise<{ success: boolean; message: string; data: Record<string, unknown> }> {
   const res = await fetch(`${API_BASE}/api/admin/tickets/${id}/override`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

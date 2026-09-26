@@ -17,22 +17,19 @@ export function ThemeProvider({
   children,
   defaultTheme = "dark",
   storageKey = "ui-theme",
-  ...props
 }: {
   children: React.ReactNode;
   defaultTheme?: Theme;
   storageKey?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-
-  // Hydrate from localStorage on client mount
-  useEffect(() => {
-    const stored = localStorage.getItem(storageKey) as Theme | null;
-    if (stored) {
-      setTheme(stored);
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(storageKey) as Theme | null;
+      if (stored) return stored;
     }
-  }, [storageKey]);
+    return defaultTheme;
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;

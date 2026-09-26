@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Customer, Order, RefundEvaluationResponse, submitRefundEvaluation } from '../../lib/refundApi';
 import { DecisionBadge } from './DecisionBadge';
-import { MessageSquare, Send, Sparkles, AlertCircle, Bot, User, ShieldAlert, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Send, Sparkles, AlertCircle, Bot, User, ShieldAlert, RefreshCw } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -18,9 +18,10 @@ interface RefundChatProps {
 }
 
 export function RefundChat({ customer, order, onEvaluationComplete }: RefundChatProps) {
+  const msgCounter = useRef(0);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: 'welcome',
+      id: 'welcome-0',
       sender: 'ai',
       text: `Hello ${customer.name}! I am RevRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -45,10 +46,11 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
 
     setError(null);
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    msgCounter.current += 1;
 
     // Add customer message
     const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
+      id: `user-${msgCounter.current}`,
       sender: 'customer',
       text,
       timestamp: nowTime
@@ -65,9 +67,10 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
         message: text
       });
 
+      msgCounter.current += 1;
       // Add AI response
       const aiMsg: ChatMessage = {
-        id: `ai-${Date.now()}`,
+        id: `ai-${msgCounter.current}`,
         sender: 'ai',
         text: evaluation.customerResponse,
         evaluation,
@@ -78,17 +81,19 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
       if (onEvaluationComplete) {
         onEvaluationComplete(evaluation);
       }
-    } catch (err: any) {
-      setError(err.message || 'Error processing refund evaluation. Make sure backend is running on port 5000.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error processing refund evaluation. Make sure backend is running on port 5000.';
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const resetChat = () => {
+    msgCounter.current += 1;
     setMessages([
       {
-        id: `welcome-${Date.now()}`,
+        id: `welcome-${msgCounter.current}`,
         sender: 'ai',
         text: `Hello ${customer.name}! I am RevRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -140,7 +145,7 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
               disabled={isSubmitting}
               className="text-[11px] bg-zinc-950/80 hover:bg-zinc-800 text-zinc-300 hover:text-white px-2.5 py-1 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-all text-left truncate max-w-[280px] sm:max-w-none"
             >
-              "{prompt}"
+              &quot;{prompt}&quot;
             </button>
           ))}
         </div>

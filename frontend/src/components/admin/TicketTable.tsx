@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RefundTicket } from '../../lib/refundApi';
 import { DecisionBadge } from '../refund/DecisionBadge';
-import { ShieldAlert, Search, Filter, Eye, ArrowUpDown, ChevronRight } from 'lucide-react';
+import { ShieldAlert, Search, Eye, ChevronRight } from 'lucide-react';
 
 interface TicketTableProps {
   tickets: RefundTicket[];
@@ -53,6 +53,23 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
                 }`}
               >
                 {status.charAt(0) + status.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
+
+          {/* Risk Level Filter */}
+          <div className="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs">
+            {['ALL', 'LOW', 'MEDIUM', 'HIGH'].map((risk) => (
+              <button
+                key={risk}
+                onClick={() => setRiskFilter(risk)}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                  riskFilter === risk
+                    ? 'bg-zinc-800 text-white shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                {risk === 'ALL' ? 'All Risks' : `${risk.charAt(0) + risk.slice(1).toLowerCase()} Risk`}
               </button>
             ))}
           </div>

@@ -6,7 +6,7 @@ import { Navbar } from '../components/refund/Navbar';
 import { PersonaSwitcher } from '../components/refund/PersonaSwitcher';
 import { OrderSelector } from '../components/refund/OrderSelector';
 import { RefundChat } from '../components/refund/RefundChat';
-import { ShieldAlert, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
+import { ShieldAlert, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CustomerPortalPage() {
@@ -16,11 +16,19 @@ export default function CustomerPortalPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadCustomers();
+  const selectCustomer = React.useCallback(async (id: string) => {
+    try {
+      const fullCustomer = await fetchCustomerById(id);
+      setSelectedCustomer(fullCustomer);
+      if (fullCustomer.orders && fullCustomer.orders.length > 0) {
+        setSelectedOrderId(fullCustomer.orders[0].id);
+      }
+    } catch (err: unknown) {
+      console.error('Error fetching customer details:', err);
+    }
   }, []);
 
-  const loadCustomers = async () => {
+  const loadCustomers = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -29,24 +37,20 @@ export default function CustomerPortalPage() {
       if (data.length > 0) {
         await selectCustomer(data[0].id);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to connect to backend on port 5000. Please start the backend.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to connect to backend on port 5000. Please start the backend.';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectCustomer]);
 
-  const selectCustomer = async (id: string) => {
-    try {
-      const fullCustomer = await fetchCustomerById(id);
-      setSelectedCustomer(fullCustomer);
-      if (fullCustomer.orders && fullCustomer.orders.length > 0) {
-        setSelectedOrderId(fullCustomer.orders[0].id);
-      }
-    } catch (err: any) {
-      console.error('Error fetching customer details:', err);
-    }
-  };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadCustomers();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadCustomers]);
 
   const activeOrder: Order | undefined = selectedCustomer?.orders?.find(o => o.id === selectedOrderId) || selectedCustomer?.orders?.[0];
 
