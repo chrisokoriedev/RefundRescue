@@ -2,12 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { Customer, Order, fetchCustomers, fetchCustomerById } from '../lib/refundApi';
-import { Navbar } from '../components/refund/Navbar';
+import { DealDeckShell } from '../components/layout/DealDeckShell';
 import { PersonaSwitcher } from '../components/refund/PersonaSwitcher';
 import { OrderSelector } from '../components/refund/OrderSelector';
 import { RefundChat } from '../components/refund/RefundChat';
-import { ShieldAlert, Sparkles, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { ShieldAlert, Sparkles } from 'lucide-react';
 
 export default function CustomerPortalPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -55,96 +54,97 @@ export default function CustomerPortalPage() {
   const activeOrder: Order | undefined = selectedCustomer?.orders?.find(o => o.id === selectedOrderId) || selectedCustomer?.orders?.[0];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col antialiased">
-      <Navbar />
+    <DealDeckShell
+      activeView="customer"
+      title="Customer Support & Refunds"
+      subtitle="Friday, December 15th 2023"
+      userProfile={{
+        name: selectedCustomer?.name || 'Sarah Jenkins',
+        role: `${selectedCustomer?.loyalty_tier || 'Gold'} Verified Customer`
+      }}
+    >
+      {/* Welcome Banner Card */}
+      <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50/50 rounded-full blur-2xl pointer-events-none"></div>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
-        {/* Hero Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-950 border border-zinc-800/80 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-
-          <div className="flex flex-col gap-2 max-w-2xl">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                AI-Powered Support Workflow
-              </span>
-              <span className="text-zinc-500 text-xs">•</span>
-              <span className="text-zinc-400 text-xs font-mono">RevRescue v1.0</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Customer Support Refund Portal
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-              Submit refund claims evaluated in real-time by a hybrid deterministic policy engine and Google Gemini Flash AI, with built-in prompt injection defense.
-            </p>
+        <div className="flex flex-col gap-2 max-w-2xl relative z-10">
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-blue-50 text-[#3861FB] border border-blue-100 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#3861FB]" />
+              AI Support Deliberation Portal
+            </span>
+            <span className="text-slate-300 text-xs">•</span>
+            <span className="text-slate-500 text-xs font-semibold">Instant Policy Decisions</span>
           </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-            <Link
-              href="/admin"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium border border-zinc-700 transition-all shadow-sm"
-            >
-              <span>View Admin Dashboard</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            Order Returns, Exchanges & Issue Resolution
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
+            Submit refund claims evaluated in real-time by a deterministic policy engine and Google Gemini Flash AI, with built-in prompt injection defense.
+          </p>
         </div>
 
-        {error && (
-          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-rose-400 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-            <button
-              onClick={loadCustomers}
-              className="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded-lg text-xs font-medium transition-colors"
-            >
-              Retry Connection
-            </button>
+        <div className="flex items-center gap-3">
+          <div className="px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col">
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Store Protection</span>
+            <span className="text-xs font-bold text-slate-800">POL-001 - POL-005 Active</span>
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Persona Switcher Component */}
-        <PersonaSwitcher
-          customers={customers}
-          selectedCustomerId={selectedCustomer?.id || 'CUST-101'}
-          onSelectCustomer={selectCustomer}
-          isLoading={isLoading}
-        />
-
-        {/* Main 2-Column Evaluation Workspace */}
-        {selectedCustomer && activeOrder ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left Column: Order Selector & Line Items */}
-            <div className="lg:col-span-5">
-              <OrderSelector
-                orders={selectedCustomer.orders || []}
-                selectedOrderId={selectedOrderId}
-                onSelectOrder={setSelectedOrderId}
-              />
-            </div>
-
-            {/* Right Column: Interactive AI Refund Chat */}
-            <div className="lg:col-span-7">
-              <RefundChat
-                customer={selectedCustomer}
-                order={activeOrder}
-                onEvaluationComplete={() => {
-                  // Optionally refresh or notify
-                }}
-              />
-            </div>
+      {error && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0" />
+            <span>{error}</span>
           </div>
-        ) : (
-          !isLoading && (
-            <div className="p-12 text-center text-zinc-500 text-sm bg-zinc-900/40 rounded-2xl border border-zinc-800">
-              Please connect the backend API to load customer order profiles.
-            </div>
-          )
-        )}
-      </main>
-    </div>
+          <button
+            onClick={loadCustomers}
+            className="px-3.5 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
+
+      {/* Synthetic Customer Switcher */}
+      <PersonaSwitcher
+        customers={customers}
+        selectedCustomerId={selectedCustomer?.id || 'CUST-101'}
+        onSelectCustomer={selectCustomer}
+        isLoading={isLoading}
+      />
+
+      {/* Main 2-Column Evaluation Workspace */}
+      {selectedCustomer && activeOrder ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Left Column: Order Selector & Line Items */}
+          <div className="lg:col-span-5" id="orders">
+            <OrderSelector
+              orders={selectedCustomer.orders || []}
+              selectedOrderId={selectedOrderId}
+              onSelectOrder={setSelectedOrderId}
+            />
+          </div>
+
+          {/* Right Column: Interactive AI Refund Chat */}
+          <div className="lg:col-span-7" id="chat">
+            <RefundChat
+              customer={selectedCustomer}
+              order={activeOrder}
+              onEvaluationComplete={() => {
+                // optionally notify
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        !isLoading && (
+          <div className="p-12 text-center text-slate-400 text-xs bg-white rounded-3xl border border-slate-100 shadow-sm">
+            Please connect the backend API to load customer order profiles.
+          </div>
+        )
+      )}
+    </DealDeckShell>
   );
 }

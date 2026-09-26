@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { RefundTicket, overrideTicket } from '../../lib/refundApi';
 import { DecisionBadge } from '../refund/DecisionBadge';
@@ -44,65 +46,66 @@ export function OverrideModal({ isOpen, onClose, ticket, onSuccess }: OverrideMo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+      <div className="bg-white border border-slate-100 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+          className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
 
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#3861FB] border border-blue-100 flex items-center justify-center">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Supervisor Manual Override</h3>
-            <p className="text-xs text-zinc-400">Human-in-the-loop decision adjustment with audit logging</p>
+            <h3 className="text-base font-bold text-slate-900">Supervisor Manual Override</h3>
+            <p className="text-xs text-slate-400">Human-in-the-loop decision adjustment with audit logging</p>
           </div>
         </div>
 
         {/* Current Ticket Context */}
-        <div className="p-3.5 bg-zinc-950/80 rounded-2xl border border-zinc-800/80 text-xs flex flex-col gap-2 mb-4">
+        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs flex flex-col gap-2 mb-5">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-zinc-400">Ticket: {ticket.id}</span>
+            <span className="font-mono text-slate-500 font-semibold">Ticket: {ticket.id}</span>
             <div className="flex items-center gap-1.5">
-              <span className="text-zinc-500 text-[10px]">Current:</span>
+              <span className="text-slate-400 text-[10px]">Current:</span>
               <DecisionBadge decision={ticket.decision} size="sm" />
             </div>
           </div>
-          <div className="text-zinc-300">
-            <span className="text-zinc-500">Customer:</span> {ticket.customer_name} • Order total: ${ticket.requested_amount.toFixed(2)}
+          <div className="text-slate-700">
+            <span className="text-slate-400">Customer:</span> <strong className="text-slate-900">{ticket.customer_name}</strong> • Order total: <strong className="text-slate-900">${ticket.requested_amount.toFixed(2)}</strong>
           </div>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+          <div className="mb-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
-            <label className="text-xs font-semibold text-zinc-300 block mb-2">
+            <label className="text-xs font-bold text-slate-700 block mb-2">
               Select New Decision:
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2.5">
               {(['APPROVED', 'DENIED', 'ESCALATED'] as const).map((dec) => (
                 <button
                   type="button"
                   key={dec}
                   onClick={() => setSelectedDecision(dec)}
-                  className={`p-2.5 rounded-xl text-xs font-semibold border transition-all text-center ${
+                  className={`p-3 rounded-2xl text-xs font-bold border transition-all text-center cursor-pointer ${
                     selectedDecision === dec
                       ? dec === 'APPROVED'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm shadow-emerald-500/20'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-xs'
                         : dec === 'DENIED'
-                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-sm shadow-rose-500/20'
-                        : 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/20'
-                      : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                        ? 'bg-rose-50 text-rose-700 border-rose-300 shadow-xs'
+                        : 'bg-amber-50 text-amber-700 border-amber-300 shadow-xs'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
                   {dec}
@@ -112,31 +115,31 @@ export function OverrideModal({ isOpen, onClose, ticket, onSuccess }: OverrideMo
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-zinc-300 block mb-1">
+            <label className="text-xs font-bold text-slate-700 block mb-1.5">
               Mandatory Audit Reason / Notes:
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Verified customer shipping photos and serial number. Approving exception under manager discretion."
+              placeholder="e.g. Verified customer shipping photos and serial number. Approving exception under supervisor discretion."
               rows={3}
               required
-              className="w-full bg-zinc-950 border border-zinc-700 text-zinc-100 text-xs rounded-xl p-3 focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder-zinc-500 resize-none"
+              className="w-full bg-slate-50 hover:bg-slate-100/70 border border-slate-200 text-slate-800 text-xs rounded-2xl p-3.5 focus:outline-none focus:ring-1 focus:ring-[#3861FB] focus:bg-white placeholder-slate-400 resize-none font-medium transition-all"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2">
+          <div className="flex items-center justify-end gap-2.5 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-800 transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !notes.trim()}
-              className="px-4 py-2 text-xs font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-xl shadow-md shadow-cyan-500/20 transition-all cursor-pointer disabled:cursor-not-allowed"
+              className="px-5 py-2.5 text-xs font-bold bg-[#3861FB] hover:bg-[#2E52E0] disabled:opacity-50 text-white rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Recording Override...' : 'Confirm Decision Override'}
             </button>

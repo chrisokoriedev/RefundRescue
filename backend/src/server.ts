@@ -11,6 +11,7 @@ import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler.j
 import { requestLogger } from './middleware/requestLogger.js';
 import { requestId } from './middleware/requestId.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
+import { registerGracefulShutdown } from './utils/gracefulShutdown.js';
 
 const log = createLogger('server');
 
@@ -115,7 +116,7 @@ app.use(globalErrorHandler);
 // ── Start server ──
 if (process.env.NODE_ENV !== 'test') {
   const port = Number(config.port);
-  app.listen(port, '0.0.0.0', () => {
+  const server = app.listen(port, '0.0.0.0', () => {
     log.info({ port }, 'RevRescue server started');
     console.log(`
 =====================================================
@@ -126,6 +127,14 @@ if (process.env.NODE_ENV !== 'test') {
 =====================================================
 `);
   });
+
+  // ── Graceful Shutdown ──
+  // SIGTERM is what Docker sends on `docker compose stop`.
+  // Note: Windows doesn't deliver SIGTERM — this takes effect in the
+  // Linux/Docker deployment environment.
+  const shutdown = registerGracefulShutdown(server);
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 export default app;

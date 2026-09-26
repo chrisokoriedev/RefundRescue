@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { RefundTicket } from '../../lib/refundApi';
 import { DecisionBadge } from '../refund/DecisionBadge';
@@ -30,26 +32,27 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
   });
 
   return (
-    <div className="bg-zinc-900/80 border border-zinc-800 rounded-3xl p-6 shadow-xl flex flex-col gap-5">
+    <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100 flex flex-col gap-6">
       {/* Header and Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h2 className="text-base font-bold text-white tracking-tight">Recent Refund Requests & Decisions</h2>
-          <p className="text-xs text-zinc-400">Real-time audit queue of all AI-deliberated tickets and supervisor overrides</p>
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight">Recent Refund Requests & Decisions</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Real-time audit queue of all AI-deliberated tickets and supervisor overrides</p>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Filter Pills & Search */}
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Status Filters */}
-          <div className="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs">
+          <div className="flex bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 text-xs font-semibold">
             {['ALL', 'APPROVED', 'DENIED', 'ESCALATED'].map((status) => (
               <button
                 key={status}
+                type="button"
                 onClick={() => setStatusFilter(status)}
-                className={`px-3 py-1 rounded-lg font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                   statusFilter === status
-                    ? 'bg-zinc-800 text-white shadow-xs'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-[#3861FB] text-white shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {status.charAt(0) + status.slice(1).toLowerCase()}
@@ -58,15 +61,16 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
           </div>
 
           {/* Risk Level Filter */}
-          <div className="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs">
+          <div className="flex bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 text-xs font-semibold">
             {['ALL', 'LOW', 'MEDIUM', 'HIGH'].map((risk) => (
               <button
                 key={risk}
+                type="button"
                 onClick={() => setRiskFilter(risk)}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                className={`px-2.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                   riskFilter === risk
-                    ? 'bg-zinc-800 text-white shadow-xs'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-slate-900 text-white shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {risk === 'ALL' ? 'All Risks' : `${risk.charAt(0) + risk.slice(1).toLowerCase()} Risk`}
@@ -75,42 +79,42 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
           </div>
 
           {/* Search Input */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <div className="relative min-w-[200px]">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search customer, ID..."
-              className="bg-zinc-950 border border-zinc-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+              className="w-full bg-slate-50 hover:bg-slate-100/70 border border-slate-200/80 rounded-2xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#3861FB] focus:bg-white transition-all font-medium"
             />
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-2xl border border-zinc-800">
+      <div className="overflow-x-auto rounded-2xl border border-slate-100">
         <table className="w-full text-left text-xs">
-          <thead className="bg-zinc-950/80 text-zinc-400 font-semibold uppercase tracking-wider border-b border-zinc-800 text-[10px]">
+          <thead className="bg-slate-50/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100 text-[10px]">
             <tr>
-              <th className="py-3.5 px-4">Ticket ID</th>
-              <th className="py-3.5 px-4">Customer</th>
-              <th className="py-3.5 px-4">Order ID & Amount</th>
-              <th className="py-3.5 px-4">AI Decision</th>
-              <th className="py-3.5 px-4">Security / Risk</th>
-              <th className="py-3.5 px-4 text-right">Actions</th>
+              <th className="py-3.5 px-4 font-semibold">Ticket ID</th>
+              <th className="py-3.5 px-4 font-semibold">Customer</th>
+              <th className="py-3.5 px-4 font-semibold">Order ID & Amount</th>
+              <th className="py-3.5 px-4 font-semibold">AI Decision</th>
+              <th className="py-3.5 px-4 font-semibold">Security / Risk</th>
+              <th className="py-3.5 px-4 text-right font-semibold">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-800/60 bg-zinc-900/40">
+          <tbody className="divide-y divide-slate-100 bg-white">
             {isLoading ? (
               [...Array(4)].map((_, i) => (
                 <tr key={i} className="animate-pulse">
-                  <td colSpan={6} className="py-4 px-4 h-12 bg-zinc-900/20" />
+                  <td colSpan={6} className="py-4 px-4 h-14 bg-slate-50/40" />
                 </tr>
               ))
             ) : filteredTickets.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-zinc-500 text-xs">
+                <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
                   No refund tickets matching current filters.
                 </td>
               </tr>
@@ -119,27 +123,27 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
                 <tr
                   key={ticket.id}
                   onClick={() => onSelectTicket(ticket.id)}
-                  className="hover:bg-zinc-800/40 transition-colors cursor-pointer group"
+                  className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                 >
                   <td className="py-3.5 px-4">
-                    <span className="font-mono font-medium text-zinc-300 group-hover:text-cyan-400 transition-colors">
+                    <span className="font-mono font-bold text-slate-900 group-hover:text-[#3861FB] transition-colors">
                       {ticket.id}
                     </span>
-                    <span className="block text-[10px] text-zinc-500">
+                    <span className="block text-[10px] text-slate-400">
                       {new Date(ticket.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </td>
 
                   <td className="py-3.5 px-4">
-                    <span className="font-semibold text-zinc-200 block">{ticket.customer_name}</span>
-                    <span className="text-[10px] text-zinc-500 font-mono">
+                    <span className="font-bold text-slate-900 block">{ticket.customer_name}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">
                       {ticket.customer_id} • {ticket.loyalty_tier}
                     </span>
                   </td>
 
                   <td className="py-3.5 px-4">
-                    <span className="font-mono text-zinc-300">{ticket.order_id}</span>
-                    <span className="block font-bold text-zinc-200">
+                    <span className="font-mono text-slate-500">{ticket.order_id}</span>
+                    <span className="block font-extrabold text-slate-900">
                       ${ticket.requested_amount.toFixed(2)}
                     </span>
                   </td>
@@ -155,12 +159,12 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
 
                   <td className="py-3.5 px-4">
                     {ticket.prompt_injection_detected ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
-                        <ShieldAlert className="w-3 h-3 text-rose-400" />
-                        Injection Flagged
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 animate-pulse">
+                        <ShieldAlert className="w-3 h-3 text-rose-600" />
+                        Injection Intercepted
                       </span>
                     ) : (
-                      <span className="text-[11px] text-zinc-400">
+                      <span className="text-[11px] text-slate-500 font-medium">
                         {ticket.risk_level} Risk
                       </span>
                     )}
@@ -168,15 +172,16 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
 
                   <td className="py-3.5 px-4 text-right">
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onSelectTicket(ticket.id);
                       }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-[#3861FB] hover:text-white text-slate-700 text-xs font-semibold border border-slate-200/80 transition-all shadow-2xs group-hover:border-[#3861FB]"
                     >
-                      <Eye className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Audit</span>
-                      <ChevronRight className="w-3 h-3 text-zinc-500" />
+                      <Eye className="w-3.5 h-3.5 text-[#3861FB] group-hover:text-white" />
+                      <span>Inspect</span>
+                      <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-white" />
                     </button>
                   </td>
                 </tr>

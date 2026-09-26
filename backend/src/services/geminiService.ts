@@ -1,6 +1,30 @@
 import { GoogleGenAI } from '@google/genai';
 import { PolicyContext, PolicyPreCheckResult } from './policyEngine.js';
 import { GuardrailScanResult } from './guardrailService.js';
+import { CircuitBreaker, retryWithBackoff, withTimeout, TimeoutError } from '../utils/resilience.js';
+
+// ── Resilience configuration for the Gemini downstream ──
+const LLM_TIMEOUT_MS = 8_000;      // hard deadline per Gemini call
+const LLM_RETRY_ATTEMPTS = 3;      // 1 try + 2 retries (429/5xx/timeouts only)
+const LLM_BASE_DELAY_MS = 300;     // exponential backoff base
+
+// Circuit breaker: 3 failures within 60s opens the circuit for 30s.
+// While open, evaluations skip straight to the heuristic fallback (fail-fast,
+// no network cost) and a half-open probe tests recovery.
+const geminiBreaker = new CircuitBreaker({
+  name: 'gemini-flash',
+  failureThreshold: 3,
+  windowMs: 60_000,
+  cooldownMs: 30_000,
+  onStateChange: (from, to) => {
+    console.warn(`[CircuitBreaker] gemini-flash: ${from} → ${to}${to === 'OPEN' ? ' — falling back to heuristic engine' : ''}`);
+  }
+});
+
+/** Exposed for health/metrics endpoints */
+export function getGeminiCircuitStats() {
+  return geminiBreaker.getStats();
+}
 
 export interface AIDeliberationOutput {
   decision: 'APPROVED' | 'DENIED' | 'ESCALATED';
@@ -38,20 +62,36 @@ export async function deliberateRefundWithAI(input: DeliberationInput): Promise<
     };
   }
 
-  // 2. Try Gemini Live API if key is present
-  if (apiKey && apiKey !== 'mock_key_not_set') {
+  // 2. Try Gemini Live API if key is present AND the circuit allows it
+  if (apiKey && apiKey !== 'mock_key_not_set' && geminiBreaker.canCall()) {
     try {
       const ai = new GoogleGenAI({ apiKey });
       const prompt = buildGeminiPrompt(customerInput, context, preCheck);
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          temperature: 0.2
-        }
-      });
+      // Resilience stack: hard timeout → retry w/ backoff (429/5xx/timeout) → circuit breaker
+      const response = await geminiBreaker.execute(() =>
+        retryWithBackoff(
+          () => withTimeout(
+            ai.models.generateContent({
+              model: 'gemini-1.5-flash',
+              contents: prompt,
+              config: {
+                responseMimeType: 'application/json',
+                temperature: 0.2
+              }
+            }),
+            LLM_TIMEOUT_MS,
+            'gemini-generateContent'
+          ),
+          {
+            attempts: LLM_RETRY_ATTEMPTS,
+            baseDelayMs: LLM_BASE_DELAY_MS,
+            onRetry: (err, attempt, delayMs) => {
+              console.warn(`[LLM] Gemini call failed (attempt ${attempt}), retrying in ${delayMs}ms: ${err instanceof Error ? err.message : err}`);
+            }
+          }
+        )
+      );
 
       const responseText = response.text?.trim() || '';
       if (responseText) {
@@ -68,7 +108,10 @@ export async function deliberateRefundWithAI(input: DeliberationInput): Promise<
         };
       }
     } catch (err) {
-      console.warn('Gemini API call failed, gracefully failing over to heuristic engine:', err);
+      const detail = err instanceof TimeoutError
+        ? `timed out after ${LLM_TIMEOUT_MS}ms`
+        : err instanceof Error ? err.message : String(err);
+      console.warn(`[LLM] Gemini deliberation unavailable (${detail}) — gracefully falling back to heuristic engine.`);
     }
   }
 
