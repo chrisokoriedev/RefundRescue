@@ -101,6 +101,28 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                 </div>
               )}
 
+              {/* Private AI Admin Alert */}
+              {(ticket.reasoning_summary?.includes('[Private Admin Alert]') || (ticket.confidence_score < 0.75 && ticket.decision === 'ESCALATED')) && (
+                <div className="p-3.5 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-950 text-xs flex items-start gap-2.5 shadow-2xs">
+                  <div className="w-6 h-6 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">
+                    ⚠️
+                  </div>
+                  <div className="flex flex-col gap-1 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-amber-900 text-xs">Private AI Admin Alert</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-200/70 text-amber-900 font-bold">
+                        Confidence: {Math.round(ticket.confidence_score * 100)}%
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-900 font-medium leading-relaxed">
+                      {ticket.reasoning_summary?.includes('[Private Admin Alert]:')
+                        ? ticket.reasoning_summary.split('[Private Admin Alert]:')[1]?.trim()
+                        : "“I'm not confident about this one — can you take a look at it?”"}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
                 <div>

@@ -25,6 +25,7 @@ export interface RefundEvaluationResult {
   promptInjectionDetected: boolean;
   actionItems: string[];
   engineUsed: string;
+  adminAlert?: string;
   createdAt: string;
 }
 
@@ -82,6 +83,16 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
   const ticketId = `TICK-${uuidv4().substring(0, 8).toUpperCase()}`;
   const now = new Date().toISOString();
 
+  const adminAlert = aiResult.adminAlert || (
+    aiResult.confidenceScore < 0.75 || finalDecision === 'ESCALATED'
+      ? "I'm not confident about this one. Can you take a look at it?"
+      : undefined
+  );
+
+  const reasoningToStore = adminAlert
+    ? `${aiResult.reasoning}\n\n[Private Admin Alert]: ${adminAlert}`
+    : aiResult.reasoning;
+
   // 7. Stage 5: Save to SQLite Database
   const insertTicket = db.prepare(`
     INSERT INTO refund_tickets (
@@ -100,7 +111,7 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
     finalDecision,
     aiResult.confidenceScore,
     aiResult.customerResponse,
-    aiResult.reasoning,
+    reasoningToStore,
     aiResult.riskLevel,
     guardrail.isFlagged ? 1 : 0,
     JSON.stringify(matchedPolicies),
@@ -116,7 +127,9 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
 
   const auditNote = guardrail.isFlagged
     ? `Flagged by Security Guardrail: ${guardrail.matchedPatterns.join(', ')}`
-    : `Deliberated by ${aiResult.engineUsed} with outcome: ${finalDecision}`;
+    : adminAlert
+      ? `[Private Admin Alert] ${adminAlert}`
+      : `Deliberated by ${aiResult.engineUsed} with outcome: ${finalDecision}`;
 
   insertAudit.run(`AUD-${uuidv4().substring(0, 8).toUpperCase()}`, ticketId, 'AI_SYSTEM', 'AUTO_EVALUATE', auditNote, now);
 
@@ -129,11 +142,12 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
     riskLevel: aiResult.riskLevel,
     matchedPolicies,
     policyClauses: matchedPolicies,
-    reasoningSummary: aiResult.reasoning,
+    reasoningSummary: reasoningToStore,
     customerResponse: aiResult.customerResponse,
     promptInjectionDetected: guardrail.isFlagged,
     actionItems: aiResult.actionItems,
     engineUsed: aiResult.engineUsed,
+    adminAlert,
     createdAt: now
   };
 }

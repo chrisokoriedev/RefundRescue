@@ -20,6 +20,22 @@ interface RefundChatProps {
   onEvaluationComplete?: (result: RefundEvaluationResponse) => void;
 }
 
+// Staged status messages that mirror the real backend pipeline while the AI works
+const THINKING_STEPS = [
+  'Reading your order details…',
+  'Checking the refund policy rules…',
+  'AI review of your claim…',
+  'Finalizing the decision…'
+];
+
+// Visual pipeline strip: same 4 stages the backend actually runs, in order
+const PIPELINE_STAGES = [
+  { label: 'Security check', icon: ShieldCheck },
+  { label: 'Policy rules', icon: Scale },
+  { label: 'AI review', icon: Brain },
+  { label: 'Decision saved', icon: Save }
+];
+
 export function RefundChat({ customer, order, onEvaluationComplete }: RefundChatProps) {
   const msgCounter = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -39,30 +55,29 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
   const [thinkingStep, setThinkingStep] = useState(0);
   const [clarificationCount, setClarificationCount] = useState(0);
 
-  // Staged status messages that mirror the real backend pipeline while the AI works
-  const thinkingSteps = [
-    'Reading your order details…',
-    'Checking the refund policy rules…',
-    'AI review of your claim…',
-    'Finalizing the decision…'
-  ];
-
-  // Visual pipeline strip: same 4 stages the backend actually runs, in order
-  const pipelineStages = [
-    { label: 'Security check', icon: ShieldCheck },
-    { label: 'Policy rules', icon: Scale },
-    { label: 'AI review', icon: Brain },
-    { label: 'Decision saved', icon: Save }
-  ];
+  const resetChat = React.useCallback(() => {
+    msgCounter.current += 1;
+    setMessages([
+      {
+        id: `welcome-${msgCounter.current}`,
+        sender: 'ai',
+        text: `Hello ${customer.name}! I am RevRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+    setError(null);
+    setInputMessage('');
+    setThinkingStep(0);
+    setClarificationCount(0);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [customer.name, order.id]);
 
   // Cycle through thinking steps while waiting for the backend
   useEffect(() => {
-    if (!isSubmitting) {
-      setThinkingStep(0);
-      return;
-    }
+    if (!isSubmitting) return;
+
     const interval = setInterval(() => {
-      setThinkingStep(prev => Math.min(prev + 1, thinkingSteps.length - 1));
+      setThinkingStep(prev => Math.min(prev + 1, THINKING_STEPS.length - 1));
     }, 900);
     return () => clearInterval(interval);
   }, [isSubmitting]);
@@ -78,8 +93,7 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
   // Focus the input when a new order/customer is loaded
   useEffect(() => {
     resetChat();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customer.id, order.id]);
+  }, [resetChat]);
 
   const suggestedPrompts = [
     'My cookware set arrived shattered with broken glass lids.',
@@ -162,23 +176,8 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
       setError(msg);
     } finally {
       setIsSubmitting(false);
+      setThinkingStep(0);
     }
-  };
-
-  const resetChat = () => {
-    msgCounter.current += 1;
-    setMessages([
-      {
-        id: `welcome-${msgCounter.current}`,
-        sender: 'ai',
-        text: `Hello ${customer.name}! I am RevRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
-    setError(null);
-    setInputMessage('');
-    setClarificationCount(0);
-    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   return (
@@ -220,7 +219,7 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
         }`}
         aria-label="How your refund decision is made"
       >
-        {pipelineStages.map((stage, i) => {
+        {PIPELINE_STAGES.map((stage, i) => {
           const Icon = stage.icon;
           const isActive = isSubmitting && thinkingStep === i;
           const isDone = (!isSubmitting && messages.some(m => m.evaluation)) || (isSubmitting && thinkingStep > i);
@@ -346,12 +345,23 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
                         </div>
                       )}
 
+                      {/* Private Admin Alert (Flagged for human reviewer) */}
+                      {msg.evaluation.adminAlert && (
+                        <div className="p-2 rounded-md bg-amber-50/90 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-1.5 font-medium">
+                          <span className="text-xs">🔒</span>
+                          <div>
+                            <span className="font-bold text-amber-950 block text-[10px] uppercase tracking-wider">Private Admin Alert Dispatched:</span>
+                            &ldquo;{msg.evaluation.adminAlert}&rdquo;
+                          </div>
+                        </div>
+                      )}
+
                       {/* Internal Reasoning for Support Audit */}
                       <div className="p-2.5 rounded-md bg-white border border-slate-200/80 text-[11px] text-slate-600">
                         <span className="font-bold text-slate-900 block mb-0.5 text-[9px] uppercase tracking-wider">
                           AI Reasoning Trace ({msg.evaluation.engineUsed}):
                         </span>
-                        {msg.evaluation.reasoningSummary}
+                        {msg.evaluation.reasoningSummary.split('\n\n[Private Admin Alert]:')[0]}
                       </div>
                     </div>
                   )}
@@ -381,7 +391,7 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3861FB] animate-bounce [animation-delay:0.4s]"></span>
               </span>
               <span key={thinkingStep} className="font-medium animate-in fade-in duration-300">
-                {thinkingSteps[thinkingStep]}
+                {THINKING_STEPS[thinkingStep]}
               </span>
             </div>
           </div>

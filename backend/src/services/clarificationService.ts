@@ -2,7 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { isUnintelligible } from './guardrailService.js';
 
 // Model is configurable so a Gemini deprecation never breaks the app silently.
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 const CLARIFY_TIMEOUT_MS = 6_000;
 
 export interface ClarificationResult {

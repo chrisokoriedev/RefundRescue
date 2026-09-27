@@ -28,20 +28,21 @@ const INJECTION_PATTERNS: Array<{ category: string; regex: RegExp }> = [
 ];
 
 /**
- * True when a message is unintelligible or unrelated to a refund request.
- * Used by the clarification pre-step and the heuristic fallback so gibberish
- * is never auto-approved.
+ * True when a message is genuinely unintelligible gibberish, whitespace, or spam.
+ * Normal conversational greetings ("hey", "hello") or product questions must NOT be blocked.
  */
 export function isUnintelligible(input: string): boolean {
   if (!input || typeof input !== 'string') return true;
-  const isRefundRelated = /(refund|return|replace|damag|defect|broken|wrong|missing|arrived|order|item|product|purchas)/i.test(input);
-  return (
-    input.trim().length < 8 ||                                      // 'ww', 'asdf'
-    !/\S/.test(input) ||                                            // whitespace only
-    !isRefundRelated ||                                             // no refund vocabulary at all
-    /(.)\1{4,}/.test(input) ||                                      // 'aaaaaa', '!!!!!!'
-    (!/\s/.test(input.trim()) && input.trim().length > 30)          // one giant token
-  );
+  const trimmed = input.trim();
+  if (trimmed.length === 0) return true;
+  if (!/\S/.test(trimmed)) return true;
+  // Repetitive character spam (e.g. 'aaaaaa', '!!!!!!')
+  if (/(.)\1{5,}/.test(trimmed)) return true;
+  // Giant single token without spaces (e.g. keyboard smash)
+  if (!/\s/.test(trimmed) && trimmed.length > 35) return true;
+  // Keyboard smash of pure symbols
+  if (/^[^a-zA-Z0-9\s]+$/.test(trimmed) && trimmed.length > 4) return true;
+  return false;
 }
 
 export function scanForPromptInjection(input: string): GuardrailScanResult {

@@ -5,21 +5,20 @@ import { CircuitBreaker, retryWithBackoff, withTimeout, TimeoutError } from '../
 
 // Model is configurable so a Gemini deprecation never breaks the app silently:
 // set GEMINI_MODEL in .env to override the default.
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+const FALLBACK_MODELS = ['gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-lite-latest'];
+const CANDIDATE_MODELS = Array.from(new Set([PRIMARY_MODEL, ...FALLBACK_MODELS]));
 
 // ── Resilience configuration for the Gemini downstream ──
-const LLM_TIMEOUT_MS = 8_000;      // hard deadline per Gemini call
-const LLM_RETRY_ATTEMPTS = 3;      // 1 try + 2 retries (429/5xx/timeouts only)
-const LLM_BASE_DELAY_MS = 300;     // exponential backoff base
+const LLM_TIMEOUT_MS = 15_000;      // 15s deadline per Gemini call
+const LLM_RETRY_ATTEMPTS = 2;      // retries per model
 
-// Circuit breaker: 3 failures within 60s opens the circuit for 30s.
-// While open, evaluations skip straight to the heuristic fallback (fail-fast,
-// no network cost) and a half-open probe tests recovery.
+// Circuit breaker: 5 failures within 60s opens the circuit for 20s.
 const geminiBreaker = new CircuitBreaker({
   name: 'gemini-flash',
-  failureThreshold: 3,
+  failureThreshold: 5,
   windowMs: 60_000,
-  cooldownMs: 30_000,
+  cooldownMs: 20_000,
   onStateChange: (from, to) => {
     console.warn(`[CircuitBreaker] gemini-flash: ${from} → ${to}${to === 'OPEN' ? ' — falling back to heuristic engine' : ''}`);
   }
@@ -39,6 +38,7 @@ export interface AIDeliberationOutput {
   customerResponse: string;
   actionItems: string[];
   engineUsed: 'GEMINI_FLASH' | 'HEURISTIC_FALLBACK';
+  adminAlert?: string;
 }
 
 export interface DeliberationInput {
@@ -62,60 +62,76 @@ export async function deliberateRefundWithAI(input: DeliberationInput): Promise<
       reasoning: `Prompt injection / adversarial pattern detected in customer input: [${guardrail.matchedPatterns.join(', ')}]. Blocked automated approval.`,
       customerResponse: 'Your refund request has been received and escalated to our human security and support supervisor team for manual verification. A specialist will follow up with you via email within 24 hours.',
       actionItems: ['FLAG_SECURITY_AUDIT', 'NOTIFY_SUPERVISOR_QUEUE', 'HOLD_TRANSACTION'],
-      engineUsed: 'HEURISTIC_FALLBACK'
+      engineUsed: 'HEURISTIC_FALLBACK',
+      adminAlert: 'Security Guardrail Flag: Prompt injection attempt detected. Blocked automated processing.'
     };
   }
 
-  // 2. Try Gemini Live API if key is present AND the circuit allows it
+  // 2. If in unit test environment, bypass live network call to avoid quota consumption and test timeouts
+  if (process.env.NODE_ENV === 'test') {
+    return generateHeuristicDeliberation(customerInput, context, preCheck);
+  }
+
+  // 2. Try Gemini Live API across candidate models if key is present AND the circuit allows it
   if (apiKey && apiKey !== 'mock_key_not_set' && geminiBreaker.canCall()) {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
-      const prompt = buildGeminiPrompt(customerInput, context, preCheck);
+    const ai = new GoogleGenAI({ apiKey });
+    const prompt = buildGeminiPrompt(customerInput, context, preCheck);
 
-      // Resilience stack: hard timeout → retry w/ backoff (429/5xx/timeout) → circuit breaker
-      const response = await geminiBreaker.execute(() =>
-        retryWithBackoff(
-          () => withTimeout(
-            ai.models.generateContent({
-              model: GEMINI_MODEL,
-              contents: prompt,
-              config: {
-                responseMimeType: 'application/json',
-                temperature: 0.2
+    for (const modelName of CANDIDATE_MODELS) {
+      try {
+        const response = await geminiBreaker.execute(() =>
+          retryWithBackoff(
+            () => withTimeout(
+              ai.models.generateContent({
+                model: modelName,
+                contents: prompt,
+                config: {
+                  responseMimeType: 'application/json',
+                  temperature: 0.2
+                }
+              }),
+              LLM_TIMEOUT_MS,
+              `gemini-${modelName}`
+            ),
+            {
+              attempts: LLM_RETRY_ATTEMPTS,
+              baseDelayMs: 250,
+              onRetry: (err, attempt, delayMs) => {
+                console.warn(`[LLM] Gemini (${modelName}) attempt ${attempt} failed, retrying in ${delayMs}ms: ${err instanceof Error ? err.message : err}`);
               }
-            }),
-            LLM_TIMEOUT_MS,
-            'gemini-generateContent'
-          ),
-          {
-            attempts: LLM_RETRY_ATTEMPTS,
-            baseDelayMs: LLM_BASE_DELAY_MS,
-            onRetry: (err, attempt, delayMs) => {
-              console.warn(`[LLM] Gemini call failed (attempt ${attempt}), retrying in ${delayMs}ms: ${err instanceof Error ? err.message : err}`);
             }
-          }
-        )
-      );
+          )
+        );
 
-      const responseText = response.text?.trim() || '';
-      if (responseText) {
-        const parsed = JSON.parse(responseText);
-        return {
-          decision: parsed.decision || (preCheck.outcome === 'POTENTIAL_APPROVAL' ? 'APPROVED' : preCheck.outcome),
-          confidenceScore: typeof parsed.confidenceScore === 'number' ? parsed.confidenceScore : 0.92,
-          riskLevel: parsed.riskLevel || 'LOW',
-          matchedPolicies: Array.isArray(parsed.matchedPolicies) ? parsed.matchedPolicies : (preCheck.matchedPolicies || []),
-          reasoning: parsed.reasoning || 'Evaluated via Google Gemini Flash reasoning against store policy.',
-          customerResponse: parsed.customerResponse || 'Your request has been processed.',
-          actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : ['NOTIFY_CUSTOMER'],
-          engineUsed: 'GEMINI_FLASH'
-        };
+        const responseText = response.text?.trim() || '';
+        if (responseText) {
+          const parsed = JSON.parse(responseText);
+          const confidence = typeof parsed.confidenceScore === 'number' ? parsed.confidenceScore : 0.90;
+          const decision = parsed.decision || (preCheck.outcome === 'POTENTIAL_APPROVAL' ? 'APPROVED' : preCheck.outcome);
+
+          let adminAlert = parsed.adminAlert;
+          if (!adminAlert && (confidence < 0.75 || decision === 'ESCALATED')) {
+            adminAlert = `I'm not confident about this one: ${parsed.reasoning || 'Requires manual review'}. Can you take a look at it?`;
+          }
+
+          return {
+            decision,
+            confidenceScore: confidence,
+            riskLevel: parsed.riskLevel || (decision === 'ESCALATED' ? 'MEDIUM' : 'LOW'),
+            matchedPolicies: Array.isArray(parsed.matchedPolicies) ? parsed.matchedPolicies : (preCheck.matchedPolicies || []),
+            reasoning: parsed.reasoning || `Evaluated via Google Gemini (${modelName}) reasoning against store policy.`,
+            customerResponse: parsed.customerResponse || 'Your request has been processed.',
+            actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : ['NOTIFY_CUSTOMER'],
+            adminAlert,
+            engineUsed: 'GEMINI_FLASH'
+          };
+        }
+      } catch (err: any) {
+        const detail = err instanceof TimeoutError
+          ? `timed out after ${LLM_TIMEOUT_MS}ms`
+          : err instanceof Error ? err.message : String(err);
+        console.warn(`[LLM] Gemini deliberation with ${modelName} unavailable (${detail}). Trying next candidate model...`);
       }
-    } catch (err) {
-      const detail = err instanceof TimeoutError
-        ? `timed out after ${LLM_TIMEOUT_MS}ms`
-        : err instanceof Error ? err.message : String(err);
-      console.warn(`[LLM] Gemini deliberation unavailable (${detail}) — gracefully falling back to heuristic engine.`);
     }
   }
 
@@ -125,14 +141,14 @@ export async function deliberateRefundWithAI(input: DeliberationInput): Promise<
 
 function buildGeminiPrompt(customerInput: string, context: PolicyContext, preCheck: PolicyPreCheckResult): string {
   return `You are RevRescue's Senior AI Customer Support Specialist.
-Evaluate the following customer refund request against store policies.
+Evaluate the following customer message against store policies and order context.
 
 STORE POLICIES:
 - POL-001: Final Sale items (is_final_sale = 1) CANNOT be refunded under any circumstance (Result: DENIED).
 - POL-002: Orders older than 30 days cannot be refunded (Result: DENIED).
 - POL-003: Requests exceeding $500 require human supervisor review (Result: ESCALATED).
 - POL-004: Damaged, defective, or incorrect items within 30 days and <=$500 are eligible for APPROVAL.
-- POL-005: Contradictory, suspicious, or abusive claims must be ESCALATED.
+- POL-005: Contradictory, suspicious, or unclear claims must be ESCALATED.
 
 PRE-CHECK CODE STATUS: ${preCheck.outcome} (Matched: ${preCheck.matchedPolicies.join(', ') || 'None'})
 ${preCheck.reason ? `Pre-check failure reason: ${preCheck.reason}` : ''}
@@ -143,7 +159,7 @@ ORDER ITEMS: ${JSON.stringify(context.items.map(i => ({ name: i.product_name, pr
 CUSTOMER MESSAGE: "${customerInput}"
 
 INSTRUCTIONS:
-- You must output strict JSON matching:
+You must output strict JSON matching:
 {
   "decision": "APPROVED" | "DENIED" | "ESCALATED",
   "confidenceScore": number between 0.0 and 1.0,
@@ -151,11 +167,14 @@ INSTRUCTIONS:
   "matchedPolicies": string[],
   "reasoning": "Clear explanation citing policies for internal support staff",
   "customerResponse": "Compassionate, empathetic, professional response explaining outcome to customer",
-  "actionItems": string[]
+  "actionItems": string[],
+  "adminAlert": "Private note for admin if not fully confident: 'I\\'m not confident about this one: [reason]. Can you take a look at it?'"
 }
 - If code pre-check is DENIED or ESCALATED, you MUST NOT APPROVE. Explain the reason gently and empathetically.
-- If genuine damage or defect is described within policy, approve with high empathy.
-- If the customer message is unintelligible, gibberish, or unrelated to a refund request for this order, you MUST ESCALATE under POL-005 and ask for clarification in customerResponse. Never approve an unclear claim.`;
+- If genuine damage or defect is described within policy, approve with high empathy (POL-004).
+- If customer gives a greeting (e.g. "hey", "hello", "hi") or asks an inquiry about an item in their order (e.g. "i want to know about the hepa filter"):
+  Greet them warmly and helpfully! Do NOT reject them or treat them as gibberish. Set decision: "ESCALATED", confidenceScore: 0.70, riskLevel: "LOW", and adminAlert: "I'm not confident about this one: Customer sent a general greeting/inquiry without an explicit refund claim yet. Can you take a look at it?".
+- If you are ever not confident or the claim requires human review, set decision: "ESCALATED", confidenceScore < 0.75, and populate adminAlert with a private note for the admin explaining why you need their review.`;
 }
 
 function generateHeuristicDeliberation(
@@ -204,7 +223,8 @@ function generateHeuristicDeliberation(
         reasoning: `High-value order ($${context.order.total_amount.toFixed(2)}) exceeds the $500 threshold under POL-003. Requires supervisor review.`,
         customerResponse: `Thank you for bringing this issue to our attention. Because this order total ($${context.order.total_amount.toFixed(2)}) is over $500.00, your case has been transferred to a senior customer support supervisor (POL-003) for expedited personal handling. A supervisor will review the details and reach out within 2-4 business hours.`,
         actionItems: ['ROUTE_TO_SENIOR_SUPERVISOR', 'SEND_PRIORITY_ESCALATION_EMAIL'],
-        engineUsed: 'HEURISTIC_FALLBACK'
+        engineUsed: 'HEURISTIC_FALLBACK',
+        adminAlert: `High-value order ($${context.order.total_amount.toFixed(2)}) requires human supervisor review per POL-003.`
       };
     }
     if (preCheck.matchedPolicies.includes('POL-005')) {
@@ -216,7 +236,8 @@ function generateHeuristicDeliberation(
         reasoning: `Account has excessive refund frequency (${context.customer?.past_refunds_count} refunds) or suspicious history under POL-005.`,
         customerResponse: `Your request has been routed to our accounts and review team for verification. We will review your account history and get back to you shortly.`,
         actionItems: ['FLAG_FRAUD_REVIEW', 'SUPERVISOR_QUEUE'],
-        engineUsed: 'HEURISTIC_FALLBACK'
+        engineUsed: 'HEURISTIC_FALLBACK',
+        adminAlert: `Account flagged for high refund velocity (${context.customer?.past_refunds_count} prior refunds).`
       };
     }
   }
@@ -225,8 +246,25 @@ function generateHeuristicDeliberation(
   const isDamageOrDefect = /(shatter|broken|crack|chip|damage|defective|faulty|won't turn on|artifact|leak|wrong size|missing)/i.test(lowerMsg);
   const isContradiction = /(never opened.*broken|sealed.*shattered inside|empty box.*lining)/i.test(lowerMsg);
 
-  // Nonsense / not-a-refund-request guard: gibberish or irrelevant messages must
-  // NOT fall through to approval. Route them to a human under POL-005 instead.
+  // Conversational greetings or general questions
+  const isGreeting = /^(hey|hello|hi|good\s*(morning|afternoon|evening)|howdy)\b/i.test(customerInput.trim());
+  const isGeneralInquiry = /(how|what|tell me|info|information|know about|status|tracking|deliver|filter)/i.test(lowerMsg);
+
+  if (isGreeting || (isGeneralInquiry && !isDamageOrDefect && !lowerMsg.includes('refund') && !lowerMsg.includes('return'))) {
+    const custFirstName = context.customer?.name ? context.customer.name.split(' ')[0] : 'there';
+    return {
+      decision: 'ESCALATED',
+      confidenceScore: 0.70,
+      riskLevel: 'LOW',
+      matchedPolicies: ['POL-005'],
+      reasoning: 'Customer provided a greeting or general product inquiry without an explicit refund claim yet.',
+      customerResponse: `Hello ${custFirstName}! Thank you for reaching out. How can I help you with your order (${context.order.id}) today?`,
+      actionItems: ['AWAIT_CUSTOMER_DETAILS'],
+      engineUsed: 'HEURISTIC_FALLBACK',
+      adminAlert: "I'm not confident about this one: Customer sent a general greeting/inquiry without an explicit claim yet. Can you take a look at it?"
+    };
+  }
+
   const looksLikeGibberish = isUnintelligible(customerInput);
 
   if (looksLikeGibberish) {
@@ -238,7 +276,8 @@ function generateHeuristicDeliberation(
       reasoning: 'Customer message is unintelligible or unrelated to a refund request. Routed to human review under POL-005 rather than auto-approving an unclear claim.',
       customerResponse: 'We received your message but were not able to understand the details of your request. Could you describe the issue with your order in a little more detail? I have also flagged your ticket for a support specialist to review personally, just in case.',
       actionItems: ['REQUEST_CLARIFICATION', 'SUPERVISOR_QUEUE'],
-      engineUsed: 'HEURISTIC_FALLBACK'
+      engineUsed: 'HEURISTIC_FALLBACK',
+      adminAlert: "I'm not confident about this one: Message appears unintelligible or incomplete. Can you take a look at it?"
     };
   }
 

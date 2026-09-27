@@ -213,6 +213,11 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
                       riskLevel={ticket.risk_level}
                       size="sm"
                     />
+                    {(ticket.reasoning_summary?.includes('[Private Admin Alert]') || (ticket.confidence_score < 0.75 && ticket.decision === 'ESCALATED')) && (
+                      <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                        ⚠️ Review Needed
+                      </span>
+                    )}
                   </td>
 
                   <td className="py-3 px-4">

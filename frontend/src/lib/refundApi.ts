@@ -54,6 +54,7 @@ export interface RefundEvaluationResponse {
   promptInjectionDetected: boolean;
   actionItems: string[];
   engineUsed: string;
+  adminAlert?: string;
   createdAt: string;
 }
 
@@ -93,6 +94,7 @@ export interface RefundTicket {
   risk_level: 'LOW' | 'MEDIUM' | 'HIGH';
   prompt_injection_detected: boolean;
   policy_clauses: string[];
+  admin_alert?: string;
   created_at: string;
   updated_at: string;
   items?: OrderItem[];
