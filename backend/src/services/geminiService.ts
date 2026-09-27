@@ -3,6 +3,10 @@ import { PolicyContext, PolicyPreCheckResult } from './policyEngine.js';
 import { GuardrailScanResult } from './guardrailService.js';
 import { CircuitBreaker, retryWithBackoff, withTimeout, TimeoutError } from '../utils/resilience.js';
 
+// Model is configurable so a Gemini deprecation never breaks the app silently:
+// set GEMINI_MODEL in .env to override the default.
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+
 // ── Resilience configuration for the Gemini downstream ──
 const LLM_TIMEOUT_MS = 8_000;      // hard deadline per Gemini call
 const LLM_RETRY_ATTEMPTS = 3;      // 1 try + 2 retries (429/5xx/timeouts only)
@@ -73,7 +77,7 @@ export async function deliberateRefundWithAI(input: DeliberationInput): Promise<
         retryWithBackoff(
           () => withTimeout(
             ai.models.generateContent({
-              model: 'gemini-1.5-flash',
+              model: GEMINI_MODEL,
               contents: prompt,
               config: {
                 responseMimeType: 'application/json',
@@ -150,7 +154,8 @@ INSTRUCTIONS:
   "actionItems": string[]
 }
 - If code pre-check is DENIED or ESCALATED, you MUST NOT APPROVE. Explain the reason gently and empathetically.
-- If genuine damage or defect is described within policy, approve with high empathy.`;
+- If genuine damage or defect is described within policy, approve with high empathy.
+- If the customer message is unintelligible, gibberish, or unrelated to a refund request for this order, you MUST ESCALATE under POL-005 and ask for clarification in customerResponse. Never approve an unclear claim.`;
 }
 
 function generateHeuristicDeliberation(
@@ -219,6 +224,29 @@ function generateHeuristicDeliberation(
   // Check for semantic damage / defect / incorrect item in message (POL-004)
   const isDamageOrDefect = /(shatter|broken|crack|chip|damage|defective|faulty|won't turn on|artifact|leak|wrong size|missing)/i.test(lowerMsg);
   const isContradiction = /(never opened.*broken|sealed.*shattered inside|empty box.*lining)/i.test(lowerMsg);
+
+  // Nonsense / not-a-refund-request guard: gibberish or irrelevant messages must
+  // NOT fall through to approval. Route them to a human under POL-005 instead.
+  const isRefundRelated = /(refund|return|replace|damag|defect|broken|wrong|missing|arrived|order|item|product|purchas)/i.test(lowerMsg);
+  const looksLikeGibberish =
+    customerInput.trim().length < 8 ||                       // 'ww', 'asdf', empty-ish
+    !/\S/ .test(customerInput) ||                           // whitespace only
+    !isRefundRelated ||                                      // no refund-related vocabulary at all
+    /(.)\1{4,}/.test(customerInput) ||                    // 'aaaaaa', '!!!!!!'
+    !/[ \s]/.test(customerInput.trim()) && customerInput.trim().length > 30; // one giant token with no spaces
+
+  if (looksLikeGibberish) {
+    return {
+      decision: 'ESCALATED',
+      confidenceScore: 0.85,
+      riskLevel: 'MEDIUM',
+      matchedPolicies: ['POL-005'],
+      reasoning: 'Customer message is unintelligible or unrelated to a refund request. Routed to human review under POL-005 rather than auto-approving an unclear claim.',
+      customerResponse: 'We received your message but were not able to understand the details of your request. Could you describe the issue with your order in a little more detail? I have also flagged your ticket for a support specialist to review personally, just in case.',
+      actionItems: ['REQUEST_CLARIFICATION', 'SUPERVISOR_QUEUE'],
+      engineUsed: 'HEURISTIC_FALLBACK'
+    };
+  }
 
   if (isContradiction) {
     return {

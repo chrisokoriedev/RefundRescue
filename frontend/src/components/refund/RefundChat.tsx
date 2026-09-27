@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Customer, Order, RefundEvaluationResponse, submitRefundEvaluation } from '../../lib/refundApi';
 import { DecisionBadge } from './DecisionBadge';
-import { Send, Sparkles, AlertCircle, Bot, User, ShieldAlert, RefreshCw } from 'lucide-react';
+import { Send, Sparkles, AlertCircle, Bot, User, ShieldAlert, RefreshCw, ShieldCheck, Scale, Brain, Save } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -43,6 +43,14 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
     'Checking the refund policy rules…',
     'AI review of your claim…',
     'Finalizing the decision…'
+  ];
+
+  // Visual pipeline strip: same 4 stages the backend actually runs, in order
+  const pipelineStages = [
+    { label: 'Security check', icon: ShieldCheck },
+    { label: 'Policy rules', icon: Scale },
+    { label: 'AI review', icon: Brain },
+    { label: 'Decision saved', icon: Save }
   ];
 
   // Cycle through thinking steps while waiting for the backend
@@ -173,6 +181,51 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
           <RefreshCw className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Reset</span>
         </button>
+      </div>
+
+      {/* Decision Pipeline Strip — lights up stage by stage while the AI works */}
+      <div
+        className={`mb-3 rounded-lg border px-3 py-2 flex items-center justify-between gap-1 transition-colors duration-300 ${
+          isSubmitting ? 'bg-blue-50/50 border-blue-100' : 'bg-slate-50/60 border-slate-100'
+        }`}
+        aria-label="How your refund decision is made"
+      >
+        {pipelineStages.map((stage, i) => {
+          const Icon = stage.icon;
+          const isActive = isSubmitting && thinkingStep === i;
+          const isDone = (!isSubmitting && messages.some(m => m.evaluation)) || (isSubmitting && thinkingStep > i);
+
+          return (
+            <React.Fragment key={stage.label}>
+              {i > 0 && (
+                <div
+                  className={`flex-1 h-px min-w-2 transition-colors duration-300 ${
+                    isDone ? 'bg-emerald-300' : 'bg-slate-200'
+                  }`}
+                />
+              )}
+              <div
+                className={`flex items-center gap-1.5 px-1 transition-all duration-300 ${
+                  isActive
+                    ? 'text-[#3861FB] scale-105'
+                    : isDone
+                      ? 'text-emerald-600'
+                      : 'text-slate-300'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'animate-pulse' : ''}`} />
+                <span
+                  className={`text-[10px] whitespace-nowrap ${
+                    isActive ? 'font-bold' : isDone ? 'font-semibold' : 'font-medium'
+                  } ${isActive || isDone ? '' : 'hidden sm:inline'}
+                  `}
+                >
+                  {stage.label}
+                </span>
+              </div>
+            </React.Fragment>
+          );
+        })}
       </div>
 
       {/* Suggested Prompt Chips */}

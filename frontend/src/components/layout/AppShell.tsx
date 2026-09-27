@@ -86,13 +86,6 @@ export function AppShell({
     activeView === 'admin'
       ? [
           {
-            id: 'metrics',
-            label: 'Live Summary',
-            href: '/admin#metrics',
-            icon: LayoutDashboard,
-            active: false
-          },
-          {
             id: 'queue',
             label: 'Refund Requests',
             href: '/admin',
@@ -117,13 +110,6 @@ export function AppShell({
               href: '/',
               icon: Sparkles,
               active: pathname === '/'
-            },
-            {
-              id: 'orders',
-              label: 'Order Context',
-              href: '/#orders',
-              icon: LayoutDashboard,
-              active: false
             }
           ];
 
