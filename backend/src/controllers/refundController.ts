@@ -9,7 +9,21 @@ import { NotFoundError } from '../middleware/errorHandler.js';
  * before running the (more expensive) full evaluation pipeline.
  */
 export async function clarifyRefund(req: Request, res: Response) {
-  const { message, clarificationCount } = req.body; // validated by Zod middleware
+  const { orderId, message, clarificationCount } = req.body; // validated by Zod middleware
+
+  if (orderId) {
+    const { getChatSession } = await import('../services/refundService.js');
+    const session = getChatSession(orderId);
+    if (session.takeoverActive) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          needsClarification: false,
+          humanTakeoverActive: true
+        }
+      });
+    }
+  }
 
   const result = await maybeAskClarification(message, clarificationCount ?? 0);
 
@@ -62,12 +76,15 @@ export async function getChatMessages(req: Request, res: Response) {
     });
   }
 
-  const { getChatHistory } = await import('../services/refundService.js');
+  const { getChatHistory, getChatSession } = await import('../services/refundService.js');
   const messages = getChatHistory(orderId, customerId);
+  const session = getChatSession(orderId, customerId);
 
   return res.json({
     success: true,
     count: messages.length,
+    takeoverActive: session.takeoverActive,
+    takenOverBy: session.takenOverBy,
     data: messages
   });
 }
@@ -88,6 +105,48 @@ export async function sendAgentReply(req: Request, res: Response) {
   const { orderId, customerId, message, ticketId } = req.body;
   const { sendAdminChatMessage } = await import('../services/refundService.js');
   const result = sendAdminChatMessage(orderId, customerId, message, ticketId);
+
+  return res.status(201).json({
+    success: true,
+    takeoverActive: true,
+    data: result
+  });
+}
+
+export async function handoverToAiHandler(req: Request, res: Response) {
+  const { orderId, customerId, ticketId } = req.body;
+  const { handoverToAi } = await import('../services/refundService.js');
+  const result = handoverToAi(orderId, customerId, ticketId);
+
+  return res.status(200).json({
+    success: true,
+    message: 'Chat handed back to AI assistant successfully.',
+    data: result
+  });
+}
+
+export async function takeoverChatHandler(req: Request, res: Response) {
+  const { orderId, customerId, ticketId } = req.body;
+  const { setChatTakeover, sendAdminChatMessage } = await import('../services/refundService.js');
+  const session = setChatTakeover(orderId, customerId, true, 'HUMAN_SPECIALIST', ticketId);
+  const notice = sendAdminChatMessage(
+    orderId,
+    customerId,
+    'A human support specialist has joined this chat session and taken over from AI.',
+    ticketId
+  );
+
+  return res.status(200).json({
+    success: true,
+    message: 'Human takeover activated.',
+    data: { session, notice }
+  });
+}
+
+export async function sendCustomerMessageHandler(req: Request, res: Response) {
+  const { orderId, customerId, message, ticketId } = req.body;
+  const { sendCustomerChatMessage } = await import('../services/refundService.js');
+  const result = sendCustomerChatMessage(orderId, customerId, message, ticketId);
 
   return res.status(201).json({
     success: true,

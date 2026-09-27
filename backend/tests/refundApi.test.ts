@@ -89,4 +89,60 @@ describe('AI Refund System REST API', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.newDecision).toBe('DENIED');
   });
+
+  it('POST /api/chat/agent-reply - activates human takeover and logs agent message', async () => {
+    const res = await request(app)
+      .post('/api/chat/agent-reply')
+      .send({
+        orderId: 'ORD-901',
+        customerId: 'CUST-101',
+        message: 'Hello Sarah, I am taking over this conversation to assist you personally.'
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.takeoverActive).toBe(true);
+    expect(res.body.data.sender).toBe('agent');
+
+    // Verify session history reflects takeover
+    const histRes = await request(app).get('/api/chat/history?orderId=ORD-901');
+    expect(histRes.status).toBe(200);
+    expect(histRes.body.takeoverActive).toBe(true);
+  });
+
+  it('POST /api/refunds/evaluate - preserves human takeover and does NOT run AI when takeover is active', async () => {
+    // When customer sends a message while takeover is active, AI is bypassed
+    const res = await request(app)
+      .post('/api/refunds/evaluate')
+      .send({
+        customerId: 'CUST-101',
+        orderId: 'ORD-901',
+        message: 'Thank you for stepping in, specialist!'
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.isHumanTakeover).toBe(true);
+    expect(res.body.data.humanTakeoverActive).toBe(true);
+    expect(res.body.data.engineUsed).toBe('human_specialist');
+  });
+
+  it('POST /api/chat/handover-to-ai - releases takeover and posts handoff announcement', async () => {
+    const res = await request(app)
+      .post('/api/chat/handover-to-ai')
+      .send({
+        orderId: 'ORD-901',
+        customerId: 'CUST-101'
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.takeoverActive).toBe(false);
+
+    // Verify session history shows takeover is now inactive
+    const histRes = await request(app).get('/api/chat/history?orderId=ORD-901');
+    expect(histRes.status).toBe(200);
+    expect(histRes.body.takeoverActive).toBe(false);
+  });
 });
+

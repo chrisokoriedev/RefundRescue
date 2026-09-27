@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Customer, Order, RefundEvaluationResponse, submitRefundEvaluation, requestClarification, fetchChatHistory } from '../../lib/refundApi';
+import {
+  Customer,
+  Order,
+  RefundEvaluationResponse,
+  submitRefundEvaluation,
+  requestClarification,
+  fetchChatHistoryDetailed,
+  sendCustomerChatMessage
+} from '../../lib/refundApi';
 import { Send, Sparkles, AlertCircle, Bot, User, RefreshCw, ShieldCheck, Scale, Brain, Save, HelpCircle, CheckCircle2, Clock, ExternalLink, Headset, ChevronDown } from 'lucide-react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
@@ -50,6 +58,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
   const [error, setError] = useState<string | null>(null);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [clarificationCount, setClarificationCount] = useState(0);
+  const [takeoverActive, setTakeoverActive] = useState(false);
   const [chatBodyRef] = useAutoAnimate<HTMLDivElement>();
 
   // Scroll collapse state: fuses pipeline strip & interactive test scenarios to top when scrolling down
@@ -75,10 +84,11 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
     let ignore = false;
     async function loadHistory() {
       try {
-        const history = await fetchChatHistory(order.id, customer.id);
+        const historyRes = await fetchChatHistoryDetailed(order.id, customer.id);
         if (ignore) return;
-        if (history && history.length > 0) {
-          setMessages(history.map(m => ({
+        setTakeoverActive(historyRes.takeoverActive);
+        if (historyRes.messages && historyRes.messages.length > 0) {
+          setMessages(historyRes.messages.map(m => ({
             id: m.id,
             sender: m.sender,
             text: m.text,
@@ -126,13 +136,15 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
     };
   }, [order.id, customer.id, customer.name]);
 
-  // Periodic polling so customer receives live takeover messages from the admin specialist in real time
+  // Periodic polling so customer receives live takeover messages & handovers from specialist in real time
   useEffect(() => {
     let isMounted = true;
     const interval = setInterval(async () => {
       try {
-        const history = await fetchChatHistory(order.id, customer.id);
+        const historyRes = await fetchChatHistoryDetailed(order.id, customer.id);
         if (!isMounted) return;
+        setTakeoverActive(historyRes.takeoverActive);
+        const history = historyRes.messages;
         if (history && history.length > 0) {
           setMessages((prev) => {
             // Check if there are new messages or changes in count
@@ -176,6 +188,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
     setClarificationCount(0);
     setIsScrolled(false);
     setManualShowPrompts(null);
+    setTakeoverActive(false);
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [customer.name, order.id]);
 
@@ -221,6 +234,24 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
 
     setMessages(prev => [...prev, userMsg]);
     setInputMessage('');
+
+    // If human specialist has taken over this conversation, send directly to specialist and DO NOT let AI interfere!
+    if (takeoverActive) {
+      try {
+        await sendCustomerChatMessage({
+          orderId: order.id,
+          customerId: customer.id,
+          message: text
+        });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error sending message to support specialist.';
+        setError(msg);
+      } finally {
+        setTimeout(() => inputRef.current?.focus(), 50);
+      }
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -309,7 +340,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
   }, [initialPrompt, autoSendPrompt, order.id]);
 
 
-  const hasAgentJoined = messages.some((m) => m.sender === 'agent');
+  const hasAgentJoined = takeoverActive;
 
   return (
     <div className="glass-card-apple apple-liquid-glass rounded-3xl p-4 sm:p-5 shadow-md border border-white/80 flex flex-col h-full relative overflow-hidden">
@@ -473,6 +504,24 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
           {messages.map((msg) => {
             const isUser = msg.sender === 'customer';
             const isAgent = msg.sender === 'agent';
+            const isHandoff = msg.text.includes('handed the conversation back');
+            const isTakeoverNotice = msg.text.includes('joined this chat session and taken over');
+
+            if (isHandoff || isTakeoverNotice) {
+              return (
+                <div key={msg.id} className="flex justify-center my-2">
+                  <div className={`px-4 py-1.5 rounded-full text-[11px] font-bold border flex items-center gap-2 shadow-2xs ${
+                    isHandoff
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]'
+                  }`}>
+                    {isHandoff ? <Sparkles className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> : <Headset className="w-3.5 h-3.5 text-[#7C3AED] flex-shrink-0" />}
+                    <span>{msg.text}</span>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={msg.id}
@@ -614,6 +663,17 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
           </div>
         )}
 
+        {/* Live specialist active banner above input */}
+        {takeoverActive && (
+          <div className="mb-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] flex items-center justify-between font-semibold shadow-2xs animate-in fade-in">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+              <span className="truncate">Connected to Human Support Specialist (AI is paused)</span>
+            </div>
+            <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider flex-shrink-0 ml-2">Direct Chat</span>
+          </div>
+        )}
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -626,7 +686,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder={`Describe refund reason for order #${order.id}...`}
+            placeholder={takeoverActive ? `Chat directly with support specialist about order #${order.id}...` : `Describe refund reason for order #${order.id}...`}
             disabled={isSubmitting}
             className="flex-1 bg-transparent border-0 text-slate-900 text-xs px-3.5 py-2.5 focus:outline-none placeholder-slate-400 font-medium"
           />

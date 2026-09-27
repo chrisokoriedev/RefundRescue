@@ -158,8 +158,11 @@ backend/src/
 | **GET** | `/api/orders/:id` | Order details, items, shipping date, and existing tickets |
 | **POST** | `/api/refunds/evaluate` | Full refund claim evaluation (guardrail → policy → AI → save) |
 | **POST** | `/api/chat/clarify` | Multi-turn analysis: determines if clarification is needed |
-| **GET** | `/api/chat/history` | Chronological chat history between customer, AI, and specialist |
-| **POST** | `/api/chat/agent-reply` | Dispatch human specialist live takeover response |
+| **GET** | `/api/chat/history` | Chronological chat history & active human takeover status |
+| **POST** | `/api/chat/agent-reply` | Dispatch human specialist response & activate human takeover |
+| **POST** | `/api/chat/handover-to-ai` | Release specialist takeover & return chat control to AI Assistant |
+| **POST** | `/api/chat/takeover` | Explicitly activate human specialist takeover |
+| **POST** | `/api/chat/customer-message` | Customer direct message to specialist during active takeover (AI bypassed) |
 | **GET** | `/api/policy/rules` | List active policy rules and default outcomes |
 | **GET** | `/api/admin/metrics` | Real-time supervisor KPIs and performance analytics |
 | **GET** | `/api/admin/tickets` | Filterable ticket queue (`status`, `riskLevel`, `search`) |

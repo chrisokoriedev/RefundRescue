@@ -89,11 +89,24 @@ export function initDatabase(dbPath: string = './data/revrescue.db'): DatabaseSy
       ticket_id TEXT,
       order_id TEXT NOT NULL,
       customer_id TEXT NOT NULL,
-      sender TEXT NOT NULL, -- 'customer' | 'ai'
+      sender TEXT NOT NULL, -- 'customer' | 'ai' | 'agent' | 'system'
       text TEXT NOT NULL,
       decision TEXT,
       confidence_score REAL,
       created_at TEXT NOT NULL,
+      FOREIGN KEY (order_id) REFERENCES orders(id),
+      FOREIGN KEY (customer_id) REFERENCES customers(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_sessions (
+      order_id TEXT PRIMARY KEY,
+      customer_id TEXT NOT NULL,
+      ticket_id TEXT,
+      takeover_active INTEGER NOT NULL DEFAULT 0,
+      taken_over_by TEXT,
+      taken_over_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
       FOREIGN KEY (order_id) REFERENCES orders(id),
       FOREIGN KEY (customer_id) REFERENCES customers(id)
     );
@@ -321,6 +334,7 @@ export function resetAndSeedDatabase(): void {
     DELETE FROM audit_logs;
     DELETE FROM refund_tickets;
     DELETE FROM chat_messages;
+    DELETE FROM chat_sessions;
     DELETE FROM order_items;
     DELETE FROM orders;
     DELETE FROM customers;

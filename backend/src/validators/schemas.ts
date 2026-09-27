@@ -45,6 +45,25 @@ export const agentReplySchema = z.object({
   ticketId: z.string().optional()
 });
 
+export const handoverToAiSchema = z.object({
+  orderId: z.string().min(1, 'orderId is required'),
+  customerId: z.string().min(1, 'customerId is required'),
+  ticketId: z.string().optional()
+});
+
+export const takeoverChatSchema = z.object({
+  orderId: z.string().min(1, 'orderId is required'),
+  customerId: z.string().min(1, 'customerId is required'),
+  ticketId: z.string().optional()
+});
+
+export const customerMessageSchema = z.object({
+  orderId: z.string().min(1, 'orderId is required'),
+  customerId: z.string().min(1, 'customerId is required'),
+  message: z.string().min(1, 'message is required').max(5000),
+  ticketId: z.string().optional()
+});
+
 export const ticketsQuerySchema = z.object({
   status: z.enum(['APPROVED', 'DENIED', 'ESCALATED']).optional(),
   riskLevel: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),

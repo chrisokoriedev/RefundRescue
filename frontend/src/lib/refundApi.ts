@@ -244,6 +244,78 @@ export async function fetchChatHistory(orderId: string, customerId?: string): Pr
   return json.data || [];
 }
 
+export interface ChatHistoryDetailedResponse {
+  messages: ChatMessageRecord[];
+  takeoverActive: boolean;
+  takenOverBy?: string;
+}
+
+export async function fetchChatHistoryDetailed(orderId: string, customerId?: string): Promise<ChatHistoryDetailedResponse> {
+  const query = new URLSearchParams({ orderId });
+  if (customerId) query.set('customerId', customerId);
+  const res = await fetch(`${API_BASE}/api/chat/history?${query.toString()}`);
+  if (!res.ok) throw new Error('Failed to fetch chat history');
+  const json = await res.json();
+  return {
+    messages: json.data || [],
+    takeoverActive: Boolean(json.takeoverActive),
+    takenOverBy: json.takenOverBy
+  };
+}
+
+export async function handoverChatToAi(payload: {
+  orderId: string;
+  customerId: string;
+  ticketId?: string;
+}): Promise<{ success: boolean; takeoverActive: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/api/chat/handover-to-ai`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to hand over chat to AI' }));
+    throw new Error(err.error || err.message || 'Failed to hand over chat to AI');
+  }
+  return res.json();
+}
+
+export async function takeoverChatSession(payload: {
+  orderId: string;
+  customerId: string;
+  ticketId?: string;
+}): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/api/chat/takeover`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to activate takeover' }));
+    throw new Error(err.error || err.message || 'Failed to activate takeover');
+  }
+  return res.json();
+}
+
+export async function sendCustomerChatMessage(payload: {
+  orderId: string;
+  customerId: string;
+  message: string;
+  ticketId?: string;
+}): Promise<ChatMessageRecord> {
+  const res = await fetch(`${API_BASE}/api/chat/customer-message`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to send customer message' }));
+    throw new Error(err.error || err.message || 'Failed to send customer message');
+  }
+  const json = await res.json();
+  return json.data;
+}
+
 export async function sendAgentChatMessage(payload: {
   orderId: string;
   customerId: string;

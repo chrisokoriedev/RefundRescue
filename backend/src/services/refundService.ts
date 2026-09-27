@@ -26,6 +26,8 @@ export interface RefundEvaluationResult {
   actionItems: string[];
   engineUsed: string;
   adminAlert?: string;
+  isHumanTakeover?: boolean;
+  humanTakeoverActive?: boolean;
   createdAt: string;
 }
 
@@ -45,6 +47,30 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
   }
 
   const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(request.orderId) as any[];
+
+  // If a human specialist has taken over this conversation, do NOT run AI evaluation!
+  const chatSession = getChatSession(request.orderId, request.customerId);
+  if (chatSession.takeoverActive) {
+    const savedCustMsg = sendCustomerChatMessage(request.orderId, request.customerId, request.message, chatSession.ticketId || undefined);
+    return {
+      ticketId: chatSession.ticketId || '',
+      orderId: order.id,
+      customerId: customer.id,
+      decision: 'ESCALATED' as const,
+      confidenceScore: 1.0,
+      riskLevel: 'LOW' as const,
+      matchedPolicies: [],
+      policyClauses: [],
+      reasoningSummary: 'Human specialist is currently managing this conversation directly. Message dispatched directly to specialist.',
+      customerResponse: '',
+      promptInjectionDetected: false,
+      isHumanTakeover: true,
+      humanTakeoverActive: true,
+      actionItems: ['Human specialist active on live conversation'],
+      engineUsed: 'human_specialist',
+      createdAt: savedCustMsg.created_at
+    };
+  }
 
   // 3. Stage 1: Security Guardrail Scanner
   const guardrail = scanForPromptInjection(request.message);
@@ -233,10 +259,161 @@ export function getRecentChats(limit: number = 20) {
   `).all(limit);
 }
 
+export interface ChatSessionRecord {
+  orderId: string;
+  customerId: string;
+  ticketId?: string | null;
+  takeoverActive: boolean;
+  takenOverBy?: string | null;
+  takenOverAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export function getChatSession(orderId: string, customerId?: string): ChatSessionRecord {
+  const db = getDb();
+  try {
+    const row = db.prepare('SELECT * FROM chat_sessions WHERE order_id = ?').get(orderId) as any;
+    if (row) {
+      return {
+        orderId: row.order_id,
+        customerId: row.customer_id,
+        ticketId: row.ticket_id,
+        takeoverActive: Boolean(row.takeover_active),
+        takenOverBy: row.taken_over_by,
+        takenOverAt: row.taken_over_at,
+        updatedAt: row.updated_at
+      };
+    }
+  } catch {
+    // Graceful fallback if table is newly migrated
+  }
+  return {
+    orderId,
+    customerId: customerId || '',
+    takeoverActive: false
+  };
+}
+
+export function setChatTakeover(
+  orderId: string,
+  customerId: string,
+  active: boolean,
+  actor: string = 'HUMAN_SPECIALIST',
+  ticketId?: string
+): ChatSessionRecord {
+  const db = getDb();
+  const now = new Date().toISOString();
+  try {
+    const existing = db.prepare('SELECT * FROM chat_sessions WHERE order_id = ?').get(orderId) as any;
+    if (existing) {
+      db.prepare(`
+        UPDATE chat_sessions
+        SET customer_id = ?, ticket_id = COALESCE(?, ticket_id), takeover_active = ?, taken_over_by = ?, taken_over_at = ?, updated_at = ?
+        WHERE order_id = ?
+      `).run(customerId, ticketId || null, active ? 1 : 0, active ? actor : null, active ? now : null, now, orderId);
+    } else {
+      db.prepare(`
+        INSERT INTO chat_sessions (order_id, customer_id, ticket_id, takeover_active, taken_over_by, taken_over_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(orderId, customerId, ticketId || null, active ? 1 : 0, active ? actor : null, active ? now : null, now, now);
+    }
+  } catch {
+    // Graceful fallback
+  }
+
+  return getChatSession(orderId, customerId);
+}
+
+export function sendCustomerChatMessage(orderId: string, customerId: string, message: string, ticketId?: string) {
+  const db = getDb();
+  const msgId = `MSG-${uuidv4().substring(0, 8).toUpperCase()}`;
+  const now = new Date().toISOString();
+
+  const insertChat = db.prepare(`
+    INSERT INTO chat_messages (id, ticket_id, order_id, customer_id, sender, text, decision, confidence_score, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertChat.run(
+    msgId,
+    ticketId || null,
+    orderId,
+    customerId,
+    'customer',
+    message,
+    null,
+    null,
+    now
+  );
+
+  return {
+    id: msgId,
+    ticket_id: ticketId || null,
+    order_id: orderId,
+    customer_id: customerId,
+    sender: 'customer' as const,
+    text: message,
+    decision: null,
+    confidence_score: null,
+    created_at: now
+  };
+}
+
+export function handoverToAi(orderId: string, customerId: string, ticketId?: string) {
+  const db = getDb();
+  const now = new Date().toISOString();
+  const msgId = `MSG-${uuidv4().substring(0, 8).toUpperCase()}`;
+
+  // 1. Release takeover in chat_sessions
+  setChatTakeover(orderId, customerId, false, undefined, ticketId);
+
+  // 2. Post announcement message directly to the conversation
+  const handoffText = 'Support specialist has handed the conversation back to RevRescue AI Assistant. AI is now active and ready to assist you.';
+  db.prepare(`
+    INSERT INTO chat_messages (id, ticket_id, order_id, customer_id, sender, text, decision, confidence_score, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    msgId,
+    ticketId || null,
+    orderId,
+    customerId,
+    'agent',
+    handoffText,
+    null,
+    1.0,
+    now
+  );
+
+  // 3. Log audit event if ticket exists
+  if (ticketId) {
+    db.prepare(`
+      INSERT INTO audit_logs (id, ticket_id, actor, action, notes, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      `AUD-${uuidv4().substring(0, 8).toUpperCase()}`,
+      ticketId,
+      'HUMAN_SUPERVISOR',
+      'HANDOVER_TO_AI',
+      'Support specialist handed chat control back to AI Assistant.',
+      now
+    );
+  }
+
+  return {
+    success: true,
+    takeoverActive: false,
+    message: handoffText,
+    created_at: now
+  };
+}
+
 export function sendAdminChatMessage(orderId: string, customerId: string, message: string, ticketId?: string) {
   const db = getDb();
   const msgId = `MSG-${uuidv4().substring(0, 8).toUpperCase()}`;
   const now = new Date().toISOString();
+
+  // Mark chat session as active human takeover
+  setChatTakeover(orderId, customerId, true, 'HUMAN_SPECIALIST', ticketId);
 
   const insertChat = db.prepare(`
     INSERT INTO chat_messages (id, ticket_id, order_id, customer_id, sender, text, decision, confidence_score, created_at)

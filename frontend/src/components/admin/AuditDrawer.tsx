@@ -1,9 +1,17 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { RefundTicket, fetchAdminTicketById, fetchChatHistory, sendAgentChatMessage, ChatMessageRecord } from '../../lib/refundApi';
+import {
+  RefundTicket,
+  fetchAdminTicketById,
+  fetchChatHistoryDetailed,
+  sendAgentChatMessage,
+  handoverChatToAi,
+  takeoverChatSession,
+  ChatMessageRecord
+} from '../../lib/refundApi';
 import { DecisionBadge } from '../refund/DecisionBadge';
-import { X, ShieldAlert, User, Package, History, ArrowRightLeft, Sparkles, Headset, Send, CheckCircle2 } from 'lucide-react';
+import { X, ShieldAlert, User, Package, History, ArrowRightLeft, Sparkles, Headset, Send, CheckCircle2, Bot } from 'lucide-react';
 
 interface AuditDrawerProps {
   ticketId: string | null;
@@ -20,6 +28,9 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
   const [isChatTakeoverOpen, setIsChatTakeoverOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessageRecord[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [takeoverActive, setTakeoverActive] = useState(false);
+  const [isHandingOver, setIsHandingOver] = useState(false);
+  const [isTakingOver, setIsTakingOver] = useState(false);
   const [agentMessageText, setAgentMessageText] = useState('');
   const [isSendingAgent, setIsSendingAgent] = useState(false);
   const [takeoverNotice, setTakeoverNotice] = useState<string | null>(null);
@@ -27,8 +38,9 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
   const loadHistory = useCallback(async (orderId: string, customerId: string) => {
     try {
       setIsLoadingHistory(true);
-      const history = await fetchChatHistory(orderId, customerId);
-      setChatHistory(history);
+      const detailed = await fetchChatHistoryDetailed(orderId, customerId);
+      setChatHistory(detailed.messages);
+      setTakeoverActive(detailed.takeoverActive);
     } catch {
       // Ignore
     } finally {
@@ -94,6 +106,63 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
       setError(msg);
     } finally {
       setIsSendingAgent(false);
+    }
+  };
+
+  // Poll for real-time customer replies and status while live chat takeover panel is open
+  useEffect(() => {
+    if (!ticket?.order_id || !ticket?.customer_id || !isChatTakeoverOpen) return;
+    const interval = setInterval(async () => {
+      try {
+        const detailed = await fetchChatHistoryDetailed(ticket.order_id, ticket.customer_id);
+        setChatHistory(detailed.messages);
+        setTakeoverActive(detailed.takeoverActive);
+      } catch {
+        // Silently swallow polling glitch
+      }
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [ticket?.order_id, ticket?.customer_id, isChatTakeoverOpen]);
+
+  const handleHandoverToAi = async () => {
+    if (!ticket || isHandingOver) return;
+    setIsHandingOver(true);
+    try {
+      await handoverChatToAi({
+        orderId: ticket.order_id,
+        customerId: ticket.customer_id,
+        ticketId: ticket.id,
+      });
+      setTakeoverActive(false);
+      setTakeoverNotice('Chat session successfully handed back to RevRescue AI Assistant.');
+      setTimeout(() => setTakeoverNotice(null), 4000);
+      await loadHistory(ticket.order_id, ticket.customer_id);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to hand over to AI';
+      setError(msg);
+    } finally {
+      setIsHandingOver(false);
+    }
+  };
+
+  const handleTakeoverChat = async () => {
+    if (!ticket || isTakingOver) return;
+    setIsTakingOver(true);
+    try {
+      await takeoverChatSession({
+        orderId: ticket.order_id,
+        customerId: ticket.customer_id,
+        ticketId: ticket.id,
+      });
+      setTakeoverActive(true);
+      setTakeoverNotice('Human specialist takeover activated. AI responses paused.');
+      setTimeout(() => setTakeoverNotice(null), 4000);
+      await loadHistory(ticket.order_id, ticket.customer_id);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to take over chat';
+      setError(msg);
+    } finally {
+      setIsTakingOver(false);
     }
   };
 
@@ -250,6 +319,24 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                       chatHistory.map((m) => {
                         const isCust = m.sender === 'customer';
                         const isAgent = m.sender === 'agent';
+                        const isHandoff = m.text.includes('handed the conversation back');
+                        const isTakeoverNotice = m.text.includes('joined this chat session and taken over');
+
+                        if (isHandoff || isTakeoverNotice) {
+                          return (
+                            <div key={m.id} className="self-center my-1 max-w-[95%]">
+                              <div className={`px-3 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5 shadow-2xs ${
+                                isHandoff
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                  : 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]'
+                              }`}>
+                                {isHandoff ? <Sparkles className="w-3 h-3 text-emerald-600 flex-shrink-0" /> : <Headset className="w-3 h-3 text-[#7C3AED] flex-shrink-0" />}
+                                <span>{m.text}</span>
+                              </div>
+                            </div>
+                          );
+                        }
+
                         return (
                           <div
                             key={m.id}
@@ -322,19 +409,60 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                         }
                       }}
                     />
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        Press <kbd className="px-1 py-0.5 bg-slate-100 rounded border text-[9px]">Enter</kbd> to send directly
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleSendAgentReply()}
-                        disabled={!agentMessageText.trim() || isSendingAgent}
-                        className="px-4 py-2 bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        <span>{isSendingAgent ? 'Sending...' : 'Send as Specialist'}</span>
-                      </button>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {takeoverActive ? (
+                          <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            Specialist Active (AI Paused)
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Bot className="w-2.5 h-2.5 text-slate-400" />
+                            AI In Control
+                          </span>
+                        )}
+                        <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">
+                          <kbd className="px-1 py-0.5 bg-slate-100 rounded border text-[9px]">Enter</kbd> to send
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 justify-end">
+                        {/* Hand over to AI button (in front of Send as Specialist) */}
+                        {takeoverActive ? (
+                          <button
+                            type="button"
+                            onClick={handleHandoverToAi}
+                            disabled={isHandingOver}
+                            title="Release specialist takeover and let AI resume assisting the customer"
+                            className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold rounded-xl shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{isHandingOver ? 'Handing over…' : 'Hand over to AI'}</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleTakeoverChat}
+                            disabled={isTakingOver}
+                            title="Take over this live conversation from AI"
+                            className="px-3.5 py-2 bg-[#F5F3FF] hover:bg-[#EDE9FE] text-[#7C3AED] border border-[#DDD6FE] text-xs font-bold rounded-xl shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                          >
+                            <Headset className="w-3.5 h-3.5 text-[#7C3AED]" />
+                            <span>{isTakingOver ? 'Taking over…' : 'Take Over Chat'}</span>
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleSendAgentReply()}
+                          disabled={!agentMessageText.trim() || isSendingAgent}
+                          className="px-4 py-2 bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>{isSendingAgent ? 'Sending...' : 'Send as Specialist'}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

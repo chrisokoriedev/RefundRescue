@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { getDb } from '../db/sqlite.js';
 import { v4 as uuidv4 } from 'uuid';
 import { NotFoundError } from '../middleware/errorHandler.js';
+import { setChatTakeover } from '../services/refundService.js';
 
 export function getMetrics(req: Request, res: Response) {
   try {
@@ -215,6 +216,13 @@ export function overrideTicket(req: Request, res: Response) {
     1.0,
     now
   );
+
+  // Activate human takeover so AI does not interfere after supervisor intervention
+  try {
+    setChatTakeover(existing.order_id, existing.customer_id, true, 'HUMAN_SUPERVISOR', id);
+  } catch {
+    // Non-blocking
+  }
 
   return res.json({
     success: true,

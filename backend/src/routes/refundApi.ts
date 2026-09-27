@@ -1,6 +1,16 @@
 import { Router } from 'express';
 import { getCustomers, getCustomerById, getOrderById } from '../controllers/customerController.js';
-import { evaluateRefund, clarifyRefund, getPolicies, getChatMessages, getRecentConversations, sendAgentReply } from '../controllers/refundController.js';
+import {
+  evaluateRefund,
+  clarifyRefund,
+  getPolicies,
+  getChatMessages,
+  getRecentConversations,
+  sendAgentReply,
+  handoverToAiHandler,
+  takeoverChatHandler,
+  sendCustomerMessageHandler
+} from '../controllers/refundController.js';
 import {
   getMetrics,
   getTickets,
@@ -18,6 +28,9 @@ import {
   clarifySchema,
   overrideTicketSchema,
   agentReplySchema,
+  handoverToAiSchema,
+  takeoverChatSchema,
+  customerMessageSchema,
   ticketsQuerySchema,
   createTicketSchema,
   idParamSchema,
@@ -66,6 +79,9 @@ router.get('/policy/rules', getPolicies);
 router.get('/chat/history', asyncErrorWrapper(getChatMessages));
 router.get('/chat/recent', asyncErrorWrapper(getRecentConversations));
 router.post('/chat/agent-reply', validateBody(agentReplySchema), asyncErrorWrapper(sendAgentReply));
+router.post('/chat/handover-to-ai', validateBody(handoverToAiSchema), asyncErrorWrapper(handoverToAiHandler));
+router.post('/chat/takeover', validateBody(takeoverChatSchema), asyncErrorWrapper(takeoverChatHandler));
+router.post('/chat/customer-message', validateBody(customerMessageSchema), asyncErrorWrapper(sendCustomerMessageHandler));
 
 // Products catalog route (predefined store catalog)
 router.get('/products', asyncErrorWrapper(getProductsHandler));
