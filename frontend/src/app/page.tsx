@@ -6,7 +6,8 @@ import { AppShell } from '../components/layout/AppShell';
 import { PersonaSwitcher } from '../components/refund/PersonaSwitcher';
 import { OrderSelector } from '../components/refund/OrderSelector';
 import { RefundChat } from '../components/refund/RefundChat';
-import { ShieldAlert } from 'lucide-react';
+import { CreateTicketModal } from '../components/admin/CreateTicketModal';
+import { ShieldAlert, Plus } from 'lucide-react';
 
 export default function CustomerPortalPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -14,6 +15,7 @@ export default function CustomerPortalPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
 
   const selectCustomer = React.useCallback(async (id: string) => {
     try {
@@ -53,11 +55,23 @@ export default function CustomerPortalPage() {
 
   const activeOrder: Order | undefined = selectedCustomer?.orders?.find(o => o.id === selectedOrderId) || selectedCustomer?.orders?.[0];
 
+  const headerActions = (
+    <button
+      type="button"
+      onClick={() => setIsCreateOpen(true)}
+      className="px-3.5 py-1.5 rounded-lg bg-[#3861FB] hover:bg-[#2E52E0] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+    >
+      <Plus className="w-3.5 h-3.5" />
+      <span>Create Ticket / Claim</span>
+    </button>
+  );
+
   return (
     <AppShell
       activeView="customer"
       title="Customer Support & Refunds"
       subtitle={selectedCustomer ? `Helping ${selectedCustomer.name} · ${selectedCustomer.loyalty_tier} tier` : undefined}
+      headerActions={headerActions}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
         <div>
@@ -120,6 +134,15 @@ export default function CustomerPortalPage() {
           </div>
         )
       )}
+
+      {/* Modal to create simulated ticket with predefined items */}
+      <CreateTicketModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={() => {
+          loadCustomers();
+        }}
+      />
     </AppShell>
   );
 }

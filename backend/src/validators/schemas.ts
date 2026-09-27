@@ -41,8 +41,18 @@ export const overrideTicketSchema = z.object({
 export const ticketsQuerySchema = z.object({
   status: z.enum(['APPROVED', 'DENIED', 'ESCALATED']).optional(),
   riskLevel: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
+  limit: z.coerce.number().int().min(1).max(200).default(10),
   offset: z.coerce.number().int().min(0).default(0)
+});
+
+export const createTicketSchema = z.object({
+  customerName: z.string().min(1, 'customerName is required').max(100),
+  customerEmail: z.string().email().optional(),
+  loyaltyTier: z.enum(['Bronze', 'Silver', 'Gold', 'Platinum']).optional().default('Silver'),
+  productId: z.string().min(1, 'productId is required'),
+  reason: z.string().min(1, 'reason is required').max(5000),
+  requestedAmount: z.number().positive().max(1_000_000).optional(),
+  orderAgeDays: z.coerce.number().int().min(0).max(365).optional().default(5)
 });
 
 // ── 422 response builder (consistent error envelope) ──

@@ -88,15 +88,19 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
       }
     }
 
+    const focusTimer = setTimeout(() => {
+      setError(null);
+      setInputMessage('');
+      setThinkingStep(0);
+      setClarificationCount(0);
+      inputRef.current?.focus();
+    }, 0);
+
     loadHistory();
-    setError(null);
-    setInputMessage('');
-    setThinkingStep(0);
-    setClarificationCount(0);
-    setTimeout(() => inputRef.current?.focus(), 50);
 
     return () => {
       ignore = true;
+      clearTimeout(focusTimer);
     };
   }, [order.id, customer.id, customer.name]);
 

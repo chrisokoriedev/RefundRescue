@@ -7,8 +7,9 @@ import { TicketTable } from '../../components/admin/TicketTable';
 import { AuditDrawer } from '../../components/admin/AuditDrawer';
 import { OverrideModal } from '../../components/admin/OverrideModal';
 import { ResetDataModal } from '../../components/admin/ResetDataModal';
+import { CreateTicketModal } from '../../components/admin/CreateTicketModal';
 import { AdminMetrics, RefundTicket, fetchAdminMetrics, fetchAdminTickets } from '../../lib/refundApi';
-import { RefreshCw, ShieldAlert, RotateCcw } from 'lucide-react';
+import { RefreshCw, ShieldAlert, RotateCcw, Plus } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -23,6 +24,7 @@ export default function AdminDashboardPage() {
   const [overrideTarget, setOverrideTarget] = useState<RefundTicket | null>(null);
   const [isOverrideOpen, setIsOverrideOpen] = useState<boolean>(false);
   const [isResetOpen, setIsResetOpen] = useState<boolean>(false);
+  const [isCreateTicketOpen, setIsCreateTicketOpen] = useState<boolean>(false);
 
   const loadData = React.useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -84,6 +86,15 @@ export default function AdminDashboardPage() {
     <div className="flex items-center gap-2">
       <button
         type="button"
+        onClick={() => setIsCreateTicketOpen(true)}
+        className="px-3.5 py-1.5 rounded-lg bg-[#3861FB] hover:bg-[#2E52E0] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+      >
+        <Plus className="w-3.5 h-3.5" />
+        <span>Create Ticket</span>
+      </button>
+
+      <button
+        type="button"
         onClick={() => setIsResetOpen(true)}
         className="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 text-xs font-semibold border border-slate-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
         title="Wipe test data and restore baseline demo database"
@@ -100,7 +111,7 @@ export default function AdminDashboardPage() {
         className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200/80 shadow-2xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
       >
         <RefreshCw className={`w-3.5 h-3.5 text-[#3861FB] ${isLoading ? 'animate-spin' : ''}`} />
-        <span>Refresh Data</span>
+        <span>Refresh</span>
       </button>
     </div>
   );
@@ -136,6 +147,7 @@ export default function AdminDashboardPage() {
           onSelectTicket={setSelectedTicketId}
           isLoading={isLoading}
           newTicketIds={newTicketIds}
+          onCreateTicket={() => setIsCreateTicketOpen(true)}
         />
       </div>
 
@@ -165,6 +177,16 @@ export default function AdminDashboardPage() {
         onClose={() => setIsResetOpen(false)}
         onSuccess={() => {
           loadData(false);
+        }}
+      />
+
+      {/* Modal to create simulated ticket with predefined items */}
+      <CreateTicketModal
+        isOpen={isCreateTicketOpen}
+        onClose={() => setIsCreateTicketOpen(false)}
+        onSuccess={(ticketId) => {
+          loadData(false);
+          if (ticketId) setSelectedTicketId(ticketId);
         }}
       />
     </AppShell>

@@ -53,6 +53,25 @@ export function getTickets(req: Request, res: Response) {
     const riskLevel = req.query.riskLevel ? String(req.query.riskLevel) : undefined;
     const db = getDb();
 
+    let countQuery = `
+      SELECT count(*) as count
+      FROM refund_tickets t
+      JOIN customers c ON t.customer_id = c.id
+      JOIN orders o ON t.order_id = o.id
+      WHERE 1=1
+    `;
+    const countParams: any[] = [];
+    if (status) {
+      countQuery += ' AND t.decision = ?';
+      countParams.push(status);
+    }
+    if (riskLevel) {
+      countQuery += ' AND t.risk_level = ?';
+      countParams.push(riskLevel);
+    }
+    const totalRow = db.prepare(countQuery).get(...countParams) as { count: number };
+    const total = totalRow?.count || 0;
+
     let query = `
       SELECT t.*, c.name as customer_name, c.loyalty_tier, o.total_amount as order_total
       FROM refund_tickets t
@@ -84,7 +103,22 @@ export function getTickets(req: Request, res: Response) {
       prompt_injection_detected: Boolean(t.prompt_injection_detected)
     }));
 
-    return res.json({ success: true, count: formatted.length, data: formatted });
+    const parsedLimit = Number(limit);
+    const parsedOffset = Number(offset);
+
+    return res.status(200).json({
+      success: true,
+      count: formatted.length,
+      pagination: {
+        total,
+        limit: parsedLimit,
+        offset: parsedOffset,
+        page: Math.floor(parsedOffset / parsedLimit) + 1,
+        totalPages: Math.max(1, Math.ceil(total / parsedLimit)),
+        hasMore: parsedOffset + parsedLimit < total
+      },
+      data: formatted
+    });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
   }
@@ -181,3 +215,139 @@ export async function resetDatabase(req: Request, res: Response) {
     return res.status(500).json({ success: false, error: error.message });
   }
 }
+
+export async function getProductsHandler(req: Request, res: Response) {
+  try {
+    const { getPredefinedProducts } = await import('../services/productCatalog.js');
+    const products = getPredefinedProducts();
+    return res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+export async function createSimulatedTicket(req: Request, res: Response) {
+  try {
+    const {
+      customerName,
+      customerEmail,
+      loyaltyTier = 'Silver',
+      productId,
+      reason,
+      requestedAmount,
+      orderAgeDays = 5
+    } = req.body;
+
+    const { getProductById } = await import('../services/productCatalog.js');
+    const { evaluateRefundRequest } = await import('../services/refundService.js');
+    const db = getDb();
+
+    const product = getProductById(productId);
+    if (!product) {
+      return res.status(400).json({
+        success: false,
+        error: `Product not found with id or SKU: ${productId}`
+      });
+    }
+
+    const email = customerEmail || `${customerName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@example.com`;
+
+    // 1. Check or create customer
+    let customer = db.prepare('SELECT * FROM customers WHERE email = ? OR name = ?').get(email, customerName) as any;
+    if (!customer) {
+      const customerId = `CUST-${Math.floor(200 + Math.random() * 800)}`;
+      const now = new Date().toISOString();
+      db.prepare(`
+        INSERT INTO customers (id, name, email, loyalty_tier, past_orders_count, past_refunds_count, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(customerId, customerName, email, loyaltyTier, 1, 0, now);
+      customer = { id: customerId, name: customerName, email, loyalty_tier: loyaltyTier, past_orders_count: 1, past_refunds_count: 0, created_at: now };
+    }
+
+    // 2. Create order
+    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderDate = new Date(Date.now() - Number(orderAgeDays) * 24 * 60 * 60 * 1000).toISOString();
+    const finalAmount = requestedAmount !== undefined ? Number(requestedAmount) : product.unitPrice;
+
+    db.prepare(`
+      INSERT INTO orders (id, customer_id, total_amount, currency, status, order_date, shipping_address, scenario_description, expected_outcome)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      orderId,
+      customer.id,
+      finalAmount,
+      'USD',
+      'DELIVERED',
+      orderDate,
+      '100 Innovation Way, San Francisco, CA',
+      reason,
+      null
+    );
+
+    // 3. Create order item
+    const itemId = `ITEM-${uuidv4().substring(0, 8).toUpperCase()}`;
+    db.prepare(`
+      INSERT INTO order_items (id, order_id, product_name, sku, quantity, unit_price, is_final_sale, category)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      itemId,
+      orderId,
+      product.name,
+      product.sku,
+      1,
+      product.unitPrice,
+      product.isFinalSale ? 1 : 0,
+      product.category
+    );
+
+    // 4. Run the full evaluation pipeline
+    const evaluation = await evaluateRefundRequest({
+      customerId: customer.id,
+      orderId,
+      message: reason,
+      requestedAmount: finalAmount
+    });
+
+    // 5. Fetch full ticket record
+    const ticket = db.prepare(`
+      SELECT t.*, c.name as customer_name, c.loyalty_tier, o.total_amount as order_total
+      FROM refund_tickets t
+      JOIN customers c ON t.customer_id = c.id
+      JOIN orders o ON t.order_id = o.id
+      WHERE t.id = ?
+    `).get(evaluation.ticketId) as any;
+
+    if (ticket && ticket.policy_clauses) {
+      try {
+        ticket.policy_clauses = JSON.parse(ticket.policy_clauses);
+      } catch {
+        // ignore
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Ticket created and evaluated successfully',
+      data: {
+        ticket: ticket || evaluation,
+        evaluation,
+        customer,
+        order: {
+          id: orderId,
+          customer_id: customer.id,
+          total_amount: finalAmount,
+          order_date: orderDate,
+          product_name: product.name,
+          sku: product.sku
+        }
+      }
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+

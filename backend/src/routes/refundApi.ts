@@ -1,7 +1,15 @@
 import { Router } from 'express';
 import { getCustomers, getCustomerById, getOrderById } from '../controllers/customerController.js';
 import { evaluateRefund, clarifyRefund, getPolicies, getChatMessages, getRecentConversations } from '../controllers/refundController.js';
-import { getMetrics, getTickets, getTicketById, overrideTicket, resetDatabase } from '../controllers/adminController.js';
+import {
+  getMetrics,
+  getTickets,
+  getTicketById,
+  overrideTicket,
+  resetDatabase,
+  getProductsHandler,
+  createSimulatedTicket
+} from '../controllers/adminController.js';
 import { asyncErrorWrapper } from '../middleware/errorHandler.js';
 import { idempotencyMiddleware } from '../middleware/idempotency.js';
 import { rateLimiter } from '../middleware/rateLimiter.js';
@@ -10,6 +18,7 @@ import {
   clarifySchema,
   overrideTicketSchema,
   ticketsQuerySchema,
+  createTicketSchema,
   idParamSchema,
   validateBody,
   validateQuery,
@@ -55,6 +64,16 @@ router.get('/policy/rules', getPolicies);
 // Chat history routes (persisted in SQLite)
 router.get('/chat/history', asyncErrorWrapper(getChatMessages));
 router.get('/chat/recent', asyncErrorWrapper(getRecentConversations));
+
+// Products catalog route (predefined store catalog)
+router.get('/products', asyncErrorWrapper(getProductsHandler));
+
+// Ticket creation / simulation route (with edge validation & rate limiting)
+router.post('/tickets/create',
+  evaluateLimiter,
+  validateBody(createTicketSchema),
+  asyncErrorWrapper(createSimulatedTicket)
+);
 
 // Admin & Support routes
 router.get('/admin/metrics', asyncErrorWrapper(getMetrics));

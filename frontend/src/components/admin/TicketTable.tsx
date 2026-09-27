@@ -3,17 +3,17 @@
 import React, { useState } from 'react';
 import { RefundTicket } from '../../lib/refundApi';
 import { DecisionBadge } from '../refund/DecisionBadge';
-import { ShieldAlert, Search, Eye, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight, BellRing } from 'lucide-react';
+import { ShieldAlert, Search, Eye, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight, BellRing, Plus } from 'lucide-react';
 
 interface TicketTableProps {
   tickets: RefundTicket[];
   onSelectTicket: (ticketId: string) => void;
   isLoading?: boolean;
-  /** Ids that arrived since the last full page load — highlighted as "new" */
   newTicketIds?: Set<string>;
+  onCreateTicket?: () => void;
 }
 
-export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }: TicketTableProps) {
+export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds, onCreateTicket }: TicketTableProps) {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [riskFilter, setRiskFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -22,6 +22,13 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
 
   // Quick-preset: jump straight to the escalation queue (human review work)
   const showEscalationQueueOnly = statusFilter === 'ESCALATED';
+
+  const counts = {
+    ALL: tickets.length,
+    APPROVED: tickets.filter(t => t.decision === 'APPROVED').length,
+    DENIED: tickets.filter(t => t.decision === 'DENIED').length,
+    ESCALATED: tickets.filter(t => t.decision === 'ESCALATED').length,
+  };
 
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(status);
@@ -89,27 +96,34 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
           </div>
         </div>
 
-        {/* Filter Pills & Search */}
+        {/* Filter Pills, Search, and Create Ticket Button */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Status Filters */}
+          {/* Status Filters with Brand Color */}
           <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/70 text-xs font-semibold">
             {['ALL', 'APPROVED', 'DENIED', 'ESCALATED'].map((status) => (
               <button
                 key={status}
                 type="button"
                 onClick={() => handleStatusFilterChange(status)}
-                className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === status
-                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#3861FB] text-white shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                 }`}
               >
-                {status.charAt(0) + status.slice(1).toLowerCase()}
+                <span>{status === 'ALL' ? 'All' : status.charAt(0) + status.slice(1).toLowerCase()}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  statusFilter === status
+                    ? 'bg-white/20 text-white'
+                    : 'bg-slate-200/70 text-slate-500'
+                }`}>
+                  {counts[status as keyof typeof counts] || 0}
+                </span>
               </button>
             ))}
           </div>
 
-          {/* Risk Level Filter */}
+          {/* Risk Level Filter with Brand Color */}
           <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/70 text-xs font-semibold">
             {['ALL', 'LOW', 'MEDIUM', 'HIGH'].map((risk) => (
               <button
@@ -118,8 +132,8 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
                 onClick={() => handleRiskFilterChange(risk)}
                 className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
                   riskFilter === risk
-                    ? 'bg-slate-900 text-white shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#3861FB] text-white shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                 }`}
               >
                 {risk === 'ALL' ? 'All Risks' : `${risk.charAt(0) + risk.slice(1).toLowerCase()} Risk`}
@@ -128,16 +142,29 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
           </div>
 
           {/* Search Input */}
-          <div className="relative min-w-[200px]">
+          <div className="relative min-w-[180px]">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search customer, ID..."
+              placeholder="Search tickets, names..."
               className="w-full bg-slate-50 hover:bg-slate-100/70 border border-slate-200/80 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#3861FB] focus:bg-white transition-all font-medium"
             />
           </div>
+
+          {/* Create Ticket Button */}
+          {onCreateTicket && (
+            <button
+              type="button"
+              onClick={onCreateTicket}
+              className="px-3.5 py-1.5 rounded-lg bg-[#3861FB] hover:bg-[#2E52E0] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+              title="Create a new simulated customer ticket with predefined items"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Create Ticket</span>
+            </button>
+          )}
         </div>
       </div>
 

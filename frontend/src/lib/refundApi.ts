@@ -263,4 +263,54 @@ export async function resetDatabaseData(): Promise<{ success: boolean; message: 
   return res.json();
 }
 
+export interface ProductItem {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  unitPrice: number;
+  isFinalSale: boolean;
+  description: string;
+}
+
+export async function fetchProducts(): Promise<ProductItem[]> {
+  const res = await fetch(`${API_BASE}/api/products`);
+  if (!res.ok) throw new Error('Failed to fetch product catalog');
+  const json = await res.json();
+  return json.data || [];
+}
+
+export interface CreateTicketPayload {
+  customerName: string;
+  customerEmail?: string;
+  loyaltyTier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+  productId: string;
+  reason: string;
+  requestedAmount?: number;
+  orderAgeDays?: number;
+}
+
+export async function createSimulatedTicket(payload: CreateTicketPayload): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    ticket: RefundTicket;
+    evaluation: RefundEvaluationResponse;
+    customer: Customer;
+    order: Order;
+  };
+}> {
+  const res = await fetch(`${API_BASE}/api/tickets/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to create ticket' }));
+    throw new Error(err.error || err.message || 'Failed to create ticket');
+  }
+  return res.json();
+}
+
+
 
