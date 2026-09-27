@@ -57,10 +57,7 @@ export default function CustomerPortalPage() {
     <AppShell
       activeView="customer"
       title="Customer Support & Refunds"
-      userProfile={{
-        name: selectedCustomer?.name || 'Sarah Jenkins',
-        role: `${selectedCustomer?.loyalty_tier || 'Gold'} Verified Customer`
-      }}
+      subtitle={selectedCustomer ? `Helping ${selectedCustomer.name} · ${selectedCustomer.loyalty_tier} tier` : undefined}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
         <div>

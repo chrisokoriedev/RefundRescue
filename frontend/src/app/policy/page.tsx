@@ -80,10 +80,6 @@ export default function PolicyRulesPage() {
     <AppShell
       activeView="policy"
       title="Refund Policy Rules"
-      userProfile={{
-        name: 'Policy Engine',
-        role: 'Business Rules'
-      }}
     >
       {/* Header Banner Card */}
       <div className="bg-white rounded-xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col gap-2 relative overflow-hidden">

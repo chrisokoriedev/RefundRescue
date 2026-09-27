@@ -66,10 +66,6 @@ export default function AdminDashboardPage() {
     <AppShell
       activeView="admin"
       title="Support Dashboard"
-      userProfile={{
-        name: 'Ferra Alexandra',
-        role: 'Support Supervisor'
-      }}
       headerActions={headerActions}
     >
       {error && (
