@@ -75,23 +75,23 @@ export function MetricsSummary({ metrics, isLoading }: MetricsSummaryProps) {
             accentColor={isPrimary ? '255, 255, 255' : '199, 210, 254'}
             className={`rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden group ${
               isPrimary
-                ? 'bg-gradient-to-br from-[#4F46E5] via-[#4338CA] to-[#312E81] text-white shadow-[0_16px_36px_rgba(79,70,229,0.28)]'
-                : 'bg-white/75 backdrop-blur-xl border border-white/90 shadow-[0_10px_30px_-8px_rgba(15,23,42,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(15,23,42,0.1)]'
+                ? 'bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#6D28D9] text-white shadow-[0_16px_36px_rgba(124,58,237,0.28)]'
+                : 'glass-card-apple bg-white/75 backdrop-blur-xl border border-white/90 shadow-[0_8px_30px_rgba(15,23,42,0.04)] hover:shadow-[0_16px_40px_-8px_rgba(15,23,42,0.1)]'
             }`}
           >
             {/* Top row: label + icon + pill */}
             <div className="flex items-center justify-between gap-2">
-              <span className={`text-xs font-bold tracking-tight ${isPrimary ? 'text-indigo-100' : 'text-slate-500'}`}>
+              <span className={`text-xs font-bold tracking-tight ${isPrimary ? 'text-purple-100' : 'text-slate-500'}`}>
                 {card.label}
               </span>
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
                 isPrimary
                   ? 'bg-white/15 text-white backdrop-blur-xs'
                   : card.variant === 'approved'
-                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                    ? 'bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]'
                     : card.variant === 'denied'
-                      ? 'bg-rose-50 text-rose-600 border border-rose-100'
-                      : 'bg-amber-50 text-[#FF5500] border border-amber-100'
+                      ? 'bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA]'
+                      : 'bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A]'
               }`}>
                 <Icon className="w-4 h-4" />
               </div>
@@ -99,16 +99,16 @@ export function MetricsSummary({ metrics, isLoading }: MetricsSummaryProps) {
 
             {/* Middle: big prominent KPI number */}
             <div className="my-2.5">
-              <div className={`text-3xl sm:text-4xl font-black tracking-tight leading-none ${isPrimary ? 'text-white' : 'text-slate-900'}`}>
+              <div className={`text-3xl sm:text-4xl font-black tracking-tight leading-none ${isPrimary ? 'text-white' : 'text-[#0F172A]'}`}>
                 {card.value}
               </div>
             </div>
 
             {/* Bottom row: subtitle + glass pill badge */}
             <div className="flex items-center justify-between gap-2 pt-2 border-t border-black/[0.04]">
-              <span className={`text-[11px] font-semibold flex items-center gap-1.5 truncate ${isPrimary ? 'text-indigo-100' : 'text-slate-500'}`}>
+              <span className={`text-xs font-medium flex items-center gap-1.5 truncate ${isPrimary ? 'text-purple-100' : 'text-slate-500'}`}>
                 {card.variant === 'escalated' && metrics.injectionAttempts > 0 && (
-                  <ShieldAlert className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
+                  <ShieldAlert className="w-3.5 h-3.5 text-[#FF5500] flex-shrink-0" />
                 )}
                 {card.sub}
               </span>

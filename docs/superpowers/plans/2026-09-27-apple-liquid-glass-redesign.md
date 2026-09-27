@@ -55,11 +55,11 @@
 - Consumes: `@formkit/auto-animate`, `react-glass-rim`
 - Produces: CSS utility classes (`.glass-pill`, `.glass-card-apple`, `.glass-modal`, `.rim-highlight`) and auto-animate hooks.
 
-- [ ] **Step 1: Install packages**
+- [x] **Step 1: Install packages**
   Run: `npm install react-glass-rim @formkit/auto-animate` in `frontend/`.
-- [ ] **Step 2: Add Apple Liquid Glass utilities to `globals.css`**
+- [x] **Step 2: Add Apple Liquid Glass utilities to `globals.css`**
   Define `.glass-surface-subtle`, `.glass-card-apple`, `.liquid-glass-pill`, and `.specular-rim` with backdrop filters, gradient borders, and squircle radiuses.
-- [ ] **Step 3: Verify build**
+- [x] **Step 3: Verify build**
   Run: `npm run build` in `frontend/`.
 
 ---
@@ -75,11 +75,11 @@
 - Replaces: `#3861FB` with Electric Iris (`#4F46E5`) & International Orange accents.
 - Replaces: Browser default fonts with Apple SF Pro / Plus Jakarta Sans font stack.
 
-- [ ] **Step 1: Update font stack in `layout.tsx` and `globals.css`**
+- [x] **Step 1: Update font stack in `layout.tsx` and `globals.css`**
   Set font-family to Apple SF Pro stack with tight letter-spacing.
-- [ ] **Step 2: Update AppShell navigation, header, and active indicators**
+- [x] **Step 2: Update AppShell navigation, header, and active indicators**
   Apply floating glass navigation bar, refined brand badge with Electric Iris gradient, and Apple-style squircle buttons.
-- [ ] **Step 3: Verify build**
+- [x] **Step 3: Verify build**
   Run: `npm run build` in `frontend/`.
 
 ---
@@ -95,13 +95,13 @@
 - Enlarges: KPI cards (bigger typography `text-3xl`, larger padding, prominent glass pill badges).
 - Enhances: Table with fluid auto-animate rows, Liquid Glass status pills (`react-glass-rim`), and higher contrast.
 
-- [ ] **Step 1: Enhance `MetricsSummary.tsx`**
+- [x] **Step 1: Enhance `MetricsSummary.tsx`**
   Expand card dimensions, apply `.glass-card-apple`, enlarge KPI digits to `text-3xl font-black`, and add glass pill trend badges.
-- [ ] **Step 2: Add `@formkit/auto-animate` and glass pills to `TicketTable.tsx`**
+- [x] **Step 2: Add `@formkit/auto-animate` and glass pills to `TicketTable.tsx`**
   Wrap table body in `useAutoAnimate()` for smooth row filtering/updates. Apply `react-glass-rim` or glass pill styling to status and risk badges.
-- [ ] **Step 3: Update `AuditDrawer.tsx` with Elevated Glass Material**
+- [x] **Step 3: Update `AuditDrawer.tsx` with Elevated Glass Material**
   Refine drawer with `backdrop-blur-2xl bg-white/90` and Electric Iris accents.
-- [ ] **Step 4: Verify build**
+- [x] **Step 4: Verify build**
   Run: `npm run build` in `frontend/`.
 
 ---
@@ -118,13 +118,13 @@
 - Connects: `@formkit/auto-animate` to chat messages list and persona pills.
 - Applies: Liquid Glass styling to customer selection pills, order context cards, and decision badges.
 
-- [ ] **Step 1: Update `PersonaSwitcher.tsx` & `OrderSelector.tsx`**
+- [x] **Step 1: Update `PersonaSwitcher.tsx` & `OrderSelector.tsx`**
   Make persona pills larger, more tactile, and floating with glass highlight on active selection.
-- [ ] **Step 2: Integrate `useAutoAnimate` in `RefundChat.tsx`**
+- [x] **Step 2: Integrate `useAutoAnimate` in `RefundChat.tsx`**
   Animate new customer messages, AI thinking steps, and decision cards smoothly without layout jumps.
-- [ ] **Step 3: Update `DecisionBadge.tsx` with Apple-style glass pills**
+- [x] **Step 3: Update `DecisionBadge.tsx` with Apple-style glass pills**
   Create specular rim lighting and vibrant status pills for `APPROVED`, `DENIED`, and `ESCALATED`.
-- [ ] **Step 4: Verify build**
+- [x] **Step 4: Verify build**
   Run: `npm run build` in `frontend/`.
 
 ---
@@ -138,19 +138,19 @@
 **Interfaces:**
 - Applies: Tier 3 Elevated Glass material, squircle continuous curves, and refined button styling with Electric Iris and subtle glass secondary buttons.
 
-- [ ] **Step 1: Update `CreateTicketModal.tsx`**
+- [x] **Step 1: Update `CreateTicketModal.tsx`**
   Apply `.glass-modal`, enlarge input padding and labels, update 3 action buttons with Electric Iris and glass styling.
-- [ ] **Step 2: Update `ResetDataModal.tsx`**
+- [x] **Step 2: Update `ResetDataModal.tsx`**
   Match Apple alert dialog styling.
-- [ ] **Step 3: Verify build & tests**
+- [x] **Step 3: Verify build & tests**
   Run: `npm run build` in `frontend/` and `npm test` in `backend/`.
 
 ---
 
 ### Task 6: Visual End-to-End Verification in Browser
 
-- [ ] **Step 1: Test Admin Dashboard (`/admin`)**
+- [x] **Step 1: Test Admin Dashboard (`/admin`)**
   Verify bigger KPI widgets, glass pill badges, Electric Iris brand theme, and smooth table filtering.
-- [ ] **Step 2: Test Customer Portal (`/`)**
+- [x] **Step 2: Test Customer Portal (`/`)**
   Verify larger persona pills, Liquid Glass order context card, and smooth chat message animations via `@formkit/auto-animate`.
-- [ ] **Step 3: Capture browser screenshots and verify complete responsiveness.**
+- [x] **Step 3: Capture browser screenshots and verify complete responsiveness.**

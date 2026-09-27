@@ -47,7 +47,7 @@ export function OverrideModal({ isOpen, onClose, ticket, onSuccess }: OverrideMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="apple-glass-elevated bg-white/95 border border-white/80 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative animate-in zoom-in-95 duration-200">
+      <div className="glass-modal apple-glass-elevated bg-white/95 border border-white/80 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative animate-in zoom-in-95 duration-200">
         <button
           type="button"
           onClick={onClose}
@@ -57,11 +57,11 @@ export function OverrideModal({ isOpen, onClose, ticket, onSuccess }: OverrideMo
         </button>
 
         <div className="flex items-center gap-3.5 mb-5">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-[#4F46E5] border border-indigo-100 flex items-center justify-center shadow-2xs">
+          <div className="w-10 h-10 rounded-2xl bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE] flex items-center justify-center shadow-2xs">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-900">Manual Decision Override</h3>
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172A]">Manual Decision Override</h3>
             <p className="text-xs text-slate-500 font-medium">Human review decision, saved to the audit log</p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export function OverrideModal({ isOpen, onClose, ticket, onSuccess }: OverrideMo
               placeholder="e.g. Verified customer shipping photos and serial number. Approving exception under supervisor discretion."
               rows={3}
               required
-              className="w-full bg-white/70 hover:bg-white border border-slate-200/80 text-slate-800 text-xs rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/40 focus:border-[#4F46E5] focus:bg-white placeholder-slate-400 resize-none font-medium transition-all shadow-2xs"
+              className="w-full bg-white/70 hover:bg-white border border-slate-200/80 text-slate-800 text-xs rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/40 focus:border-[#7C3AED] focus:bg-white placeholder-slate-400 resize-none font-medium transition-all shadow-2xs"
             />
           </div>
 
@@ -139,7 +139,7 @@ export function OverrideModal({ isOpen, onClose, ticket, onSuccess }: OverrideMo
             <button
               type="submit"
               disabled={isSubmitting || !notes.trim()}
-              className="px-5 py-2.5 text-xs font-bold bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 text-white rounded-xl shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed active:scale-95"
+              className="px-5 py-2.5 text-xs font-bold bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-50 text-white rounded-xl shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed active:scale-95"
             >
               {isSubmitting ? 'Recording Override...' : 'Confirm Decision Override'}
             </button>

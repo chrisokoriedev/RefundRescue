@@ -39,14 +39,14 @@ export function OrderSelector({ orders, selectedOrderId, onSelectOrder }: OrderS
   const hasFinalSale = selectedOrder.items?.some(i => i.is_final_sale === 1);
 
   return (
-    <div className="apple-liquid-glass rounded-3xl p-6 sm:p-7 shadow-xs border border-white/80 flex flex-col gap-5">
+    <div className="glass-card-apple apple-liquid-glass rounded-3xl p-6 sm:p-7 shadow-xs border border-white/80 flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-[#4F46E5] border border-indigo-100 flex items-center justify-center shadow-2xs">
+          <div className="w-10 h-10 rounded-2xl bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE] flex items-center justify-center shadow-2xs">
             <Package className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-900 tracking-tight">Order Context</h3>
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172A] tracking-tight">Order Context</h3>
             <p className="text-xs text-slate-500 font-medium">Order metadata and line items analyzed by policy engine</p>
           </div>
         </div>
@@ -55,7 +55,7 @@ export function OrderSelector({ orders, selectedOrderId, onSelectOrder }: OrderS
           <select
             value={selectedOrderId}
             onChange={(e) => onSelectOrder(e.target.value)}
-            className="bg-white/80 hover:bg-white border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/40 font-semibold cursor-pointer shadow-2xs"
+            className="bg-white/80 hover:bg-white border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/40 font-semibold cursor-pointer shadow-2xs"
           >
             {orders.map(o => (
               <option key={o.id} value={o.id} className="bg-white text-slate-800">
@@ -75,7 +75,7 @@ export function OrderSelector({ orders, selectedOrderId, onSelectOrder }: OrderS
               {selectedOrder.status}
             </span>
           </div>
-          <div className="text-base font-black text-[#4F46E5]">
+          <div className="text-base font-black text-[#7C3AED]">
             ${selectedOrder.total_amount.toFixed(2)} {selectedOrder.currency}
           </div>
         </div>
@@ -94,26 +94,26 @@ export function OrderSelector({ orders, selectedOrderId, onSelectOrder }: OrderS
         {/* Policy Flags Indicators */}
         <div className="flex flex-wrap gap-1.5 pt-1">
           {hasFinalSale && (
-            <span className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold shadow-2xs">
-              <Tag className="w-3 h-3 text-rose-600" />
+            <span className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] font-bold shadow-2xs">
+              <Tag className="w-3 h-3 text-[#DC2626]" />
               Final Sale Item (POL-001)
             </span>
           )}
           {isExpired && (
-            <span className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold shadow-2xs">
-              <AlertCircle className="w-3 h-3 text-rose-600" />
+            <span className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] font-bold shadow-2xs">
+              <AlertCircle className="w-3 h-3 text-[#DC2626]" />
               Order &gt; 30 Days Old (POL-002)
             </span>
           )}
           {isHighValue && (
-            <span className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-bold shadow-2xs">
-              <AlertCircle className="w-3 h-3 text-amber-600" />
+            <span className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A] font-bold shadow-2xs">
+              <AlertCircle className="w-3 h-3 text-[#D97706]" />
               Exceeds $500 Threshold (POL-003)
             </span>
           )}
           {!hasFinalSale && !isExpired && !isHighValue && (
-            <span className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold shadow-2xs">
-              <CheckCircle className="w-3 h-3 text-emerald-600" />
+            <span className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] font-bold shadow-2xs">
+              <CheckCircle className="w-3 h-3 text-[#059669]" />
               In-Window Regular Order (POL-004)
             </span>
           )}
@@ -125,7 +125,7 @@ export function OrderSelector({ orders, selectedOrderId, onSelectOrder }: OrderS
             <span className="text-slate-400 uppercase tracking-wider font-bold text-[9px] block mb-0.5">Test Scenario Note:</span>
             {selectedOrder.scenario_description}
             {selectedOrder.expected_outcome && (
-              <span className="block mt-1 font-bold text-[#4F46E5]">
+              <span className="block mt-1 font-bold text-[#7C3AED]">
                 Target Policy Result: {selectedOrder.expected_outcome}
               </span>
             )}

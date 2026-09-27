@@ -87,7 +87,7 @@ export default function AdminDashboardPage() {
       <button
         type="button"
         onClick={() => setIsCreateTicketOpen(true)}
-        className="px-4 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-black shadow-xs flex items-center gap-2 transition-all cursor-pointer active:scale-95"
+        className="px-4 py-2 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-black shadow-xs flex items-center gap-2 transition-all cursor-pointer active:scale-95"
       >
         <Plus className="w-3.5 h-3.5" />
         <span>Create Ticket</span>
@@ -110,7 +110,7 @@ export default function AdminDashboardPage() {
         disabled={isLoading}
         className="px-3.5 py-2 rounded-xl bg-white/70 hover:bg-white text-slate-700 text-xs font-bold border border-slate-200/80 shadow-2xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 backdrop-blur-md"
       >
-        <RefreshCw className={`w-3.5 h-3.5 text-[#4F46E5] ${isLoading ? 'animate-spin' : ''}`} />
+        <RefreshCw className={`w-3.5 h-3.5 text-[#7C3AED] ${isLoading ? 'animate-spin' : ''}`} />
         <span>Refresh</span>
       </button>
     </div>

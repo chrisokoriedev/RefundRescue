@@ -228,7 +228,7 @@ export interface ChatMessageRecord {
   ticket_id?: string | null;
   order_id: string;
   customer_id: string;
-  sender: 'customer' | 'ai';
+  sender: 'customer' | 'ai' | 'agent';
   text: string;
   decision?: 'APPROVED' | 'DENIED' | 'ESCALATED' | null;
   confidence_score?: number | null;
@@ -242,6 +242,25 @@ export async function fetchChatHistory(orderId: string, customerId?: string): Pr
   if (!res.ok) throw new Error('Failed to fetch chat history');
   const json = await res.json();
   return json.data || [];
+}
+
+export async function sendAgentChatMessage(payload: {
+  orderId: string;
+  customerId: string;
+  message: string;
+  ticketId?: string;
+}): Promise<ChatMessageRecord> {
+  const res = await fetch(`${API_BASE}/api/chat/agent-reply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to send agent reply' }));
+    throw new Error(err.error || err.message || 'Failed to send agent reply');
+  }
+  const json = await res.json();
+  return json.data;
 }
 
 export async function fetchRecentChats(limit = 20): Promise<ChatMessageRecord[]> {

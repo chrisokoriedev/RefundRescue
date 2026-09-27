@@ -83,3 +83,14 @@ export async function getRecentConversations(req: Request, res: Response) {
     data: conversations
   });
 }
+
+export async function sendAgentReply(req: Request, res: Response) {
+  const { orderId, customerId, message, ticketId } = req.body;
+  const { sendAdminChatMessage } = await import('../services/refundService.js');
+  const result = sendAdminChatMessage(orderId, customerId, message, ticketId);
+
+  return res.status(201).json({
+    success: true,
+    data: result
+  });
+}

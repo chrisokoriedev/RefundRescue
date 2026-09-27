@@ -85,7 +85,7 @@ export default function CustomerPortalPage() {
     <button
       type="button"
       onClick={() => setIsCreateOpen(true)}
-      className="px-4 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-black shadow-xs flex items-center gap-2 transition-all cursor-pointer active:scale-95"
+      className="px-4 py-2 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-black shadow-xs flex items-center gap-2 transition-all cursor-pointer active:scale-95"
     >
       <Plus className="w-3.5 h-3.5" />
       <span>Create Ticket / Claim</span>
@@ -127,8 +127,11 @@ export default function CustomerPortalPage() {
 
       {selectedCustomer && activeOrder ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Left column: sample-customer picker + order context, stacked */}
-          <div className="lg:col-span-5 flex flex-col gap-5" id="orders">
+          {/* Left column: sample-customer picker + order context, stacked - ONLY scrollable container */}
+          <div
+            className="lg:col-span-5 flex flex-col gap-5 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto lg:sticky lg:top-20 pr-1.5 custom-scrollbar"
+            id="orders"
+          >
             <PersonaSwitcher
               customers={customers}
               selectedCustomerId={selectedCustomer?.id || 'CUST-101'}
@@ -143,7 +146,8 @@ export default function CustomerPortalPage() {
             />
           </div>
 
-          <div className="lg:col-span-7" id="chat">
+          {/* Right column: chat is NOT scrollable, sits cleanly at top */}
+          <div className="lg:col-span-7 lg:sticky lg:top-20" id="chat">
             <RefundChat
               customer={selectedCustomer}
               order={activeOrder}

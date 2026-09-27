@@ -10,12 +10,13 @@ interface DecisionBadgeProps {
 }
 
 /** Tiny horizontal confidence bar shown inside the badge (md/lg only). */
-function ConfidenceMeter({ score, tone }: { score: number; tone: 'emerald' | 'rose' | 'amber' }) {
+function ConfidenceMeter({ score, tone }: { score: number; tone: 'emerald' | 'rose' | 'amber' | 'orange' }) {
   const pct = Math.round(score * 100);
   const barColor = {
-    emerald: 'bg-emerald-500',
-    rose: 'bg-rose-500',
-    amber: 'bg-amber-500'
+    emerald: 'bg-[#059669]',
+    rose: 'bg-[#DC2626]',
+    amber: 'bg-[#D97706]',
+    orange: 'bg-[#FF5500]'
   }[tone];
 
   return (
@@ -38,11 +39,16 @@ export function DecisionBadge({ decision, confidenceScore, riskLevel, size = 'md
     lg: 'text-sm px-4 py-1.5 gap-2 font-black'
   }[size];
 
+  const tone = decision === 'APPROVED' 
+    ? 'emerald' 
+    : decision === 'DENIED' 
+      ? 'rose' 
+      : riskLevel === 'HIGH' 
+        ? 'orange' 
+        : 'amber';
+
   const meter = confidenceScore !== undefined
-    ? <ConfidenceMeter
-        score={confidenceScore}
-        tone={decision === 'APPROVED' ? 'emerald' : decision === 'DENIED' ? 'rose' : 'amber'}
-      />
+    ? <ConfidenceMeter score={confidenceScore} tone={tone} />
     : null;
 
   if (decision === 'APPROVED') {
@@ -50,10 +56,10 @@ export function DecisionBadge({ decision, confidenceScore, riskLevel, size = 'md
       <Rim
         as="span"
         intensity={0.4}
-        accentColor="52, 211, 153"
-        className={`inline-flex items-center rounded-full bg-emerald-50/80 backdrop-blur-md text-emerald-800 border border-emerald-300/80 shadow-[0_2px_10px_rgba(16,185,129,0.12)] ${sizeClasses}`}
+        accentColor="5, 150, 105"
+        className={`inline-flex items-center rounded-full bg-[#ECFDF5]/90 backdrop-blur-md text-[#059669] border border-[#A7F3D0] shadow-[0_2px_10px_rgba(5,150,105,0.12)] ${sizeClasses}`}
       >
-        <CheckCircle2 className={size === 'sm' ? 'w-3.5 h-3.5 text-emerald-600' : 'w-4 h-4 text-emerald-600'} />
+        <CheckCircle2 className={size === 'sm' ? 'w-3.5 h-3.5 text-[#059669]' : 'w-4 h-4 text-[#059669]'} />
         <span>Approved</span>
         {size !== 'sm' && meter}
         {size === 'sm' && confidenceScore !== undefined && (
@@ -68,10 +74,10 @@ export function DecisionBadge({ decision, confidenceScore, riskLevel, size = 'md
       <Rim
         as="span"
         intensity={0.4}
-        accentColor="251, 113, 133"
-        className={`inline-flex items-center rounded-full bg-rose-50/80 backdrop-blur-md text-rose-800 border border-rose-300/80 shadow-[0_2px_10px_rgba(244,63,94,0.12)] ${sizeClasses}`}
+        accentColor="220, 38, 38"
+        className={`inline-flex items-center rounded-full bg-[#FEF2F2]/90 backdrop-blur-md text-[#DC2626] border border-[#FECACA] shadow-[0_2px_10px_rgba(220,38,38,0.12)] ${sizeClasses}`}
       >
-        <XCircle className={size === 'sm' ? 'w-3.5 h-3.5 text-rose-600' : 'w-4 h-4 text-rose-600'} />
+        <XCircle className={size === 'sm' ? 'w-3.5 h-3.5 text-[#DC2626]' : 'w-4 h-4 text-[#DC2626]'} />
         <span>Denied</span>
         {size !== 'sm' && meter}
         {size === 'sm' && confidenceScore !== undefined && (
@@ -85,17 +91,17 @@ export function DecisionBadge({ decision, confidenceScore, riskLevel, size = 'md
     <Rim
       as="span"
       intensity={0.4}
-      accentColor={riskLevel === 'HIGH' ? '255, 85, 0' : '245, 158, 11'}
+      accentColor={riskLevel === 'HIGH' ? '255, 85, 0' : '217, 119, 6'}
       className={`inline-flex items-center rounded-full ${
         riskLevel === 'HIGH'
-          ? 'bg-rose-50/90 text-rose-900 border border-rose-300/90 font-extrabold shadow-[0_2px_12px_rgba(244,63,94,0.15)]'
-          : 'bg-amber-50/80 text-amber-900 border border-amber-300/80 shadow-[0_2px_10px_rgba(245,158,11,0.12)]'
+          ? 'bg-[#FFF5ED]/95 text-[#FF5500] border border-[#FFD8C2] font-extrabold shadow-[0_2px_12px_rgba(255,85,0,0.15)]'
+          : 'bg-[#FFFBEB]/90 text-[#D97706] border border-[#FDE68A] shadow-[0_2px_10px_rgba(217,119,6,0.12)]'
       } backdrop-blur-md ${sizeClasses}`}
     >
       {riskLevel === 'HIGH' ? (
-        <ShieldAlert className={size === 'sm' ? 'w-3.5 h-3.5 text-rose-600' : 'w-4 h-4 text-rose-600'} />
+        <ShieldAlert className={size === 'sm' ? 'w-3.5 h-3.5 text-[#FF5500]' : 'w-4 h-4 text-[#FF5500]'} />
       ) : (
-        <AlertTriangle className={size === 'sm' ? 'w-3.5 h-3.5 text-amber-600' : 'w-4 h-4 text-amber-600'} />
+        <AlertTriangle className={size === 'sm' ? 'w-3.5 h-3.5 text-[#D97706]' : 'w-4 h-4 text-[#D97706]'} />
       )}
       <span>{riskLevel === 'HIGH' ? 'Escalated (Security)' : 'Escalated'}</span>
       {size !== 'sm' && meter}

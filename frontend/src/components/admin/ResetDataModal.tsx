@@ -38,15 +38,15 @@ export function ResetDataModal({ isOpen, onClose, onSuccess }: ResetDataModalPro
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md apple-glass-elevated bg-white/95 rounded-3xl shadow-2xl border border-white/80 overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="w-full max-w-md glass-modal apple-glass-elevated bg-white/95 rounded-3xl shadow-2xl border border-white/80 overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shadow-2xs">
+            <div className="w-10 h-10 rounded-2xl bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A] flex items-center justify-center shadow-2xs">
               <RotateCcw className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-black text-slate-900">Reset Demo Database</h3>
+              <h3 className="text-base sm:text-lg font-bold text-[#0F172A]">Reset Demo Database</h3>
               <p className="text-xs text-slate-500 font-medium">Restore clean demo tickets and customer states</p>
             </div>
           </div>
@@ -62,10 +62,10 @@ export function ResetDataModal({ isOpen, onClose, onSuccess }: ResetDataModalPro
 
         {/* Body */}
         <div className="p-6 flex flex-col gap-4 text-xs">
-          <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-950 flex items-start gap-3 shadow-xs">
-            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="p-4 rounded-2xl bg-[#FFFBEB]/90 border border-[#FDE68A] text-amber-950 flex items-start gap-3 shadow-xs">
+            <AlertTriangle className="w-4 h-4 text-[#D97706] flex-shrink-0 mt-0.5" />
             <div className="leading-relaxed">
-              <span className="font-bold block mb-0.5 text-amber-900">Are you sure?</span>
+              <span className="font-bold block mb-0.5 text-[#D97706]">Are you sure?</span>
               This will remove all recently evaluated test refund claims and chat records, and restore the initial 15 baseline test scenarios with clean demo stats.
             </div>
           </div>

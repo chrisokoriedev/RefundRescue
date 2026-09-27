@@ -72,15 +72,15 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
   const paginatedTickets = filteredTickets.slice(startIndex, endIndex);
 
   return (
-    <div className="apple-liquid-glass rounded-3xl p-6 sm:p-7 shadow-xs border border-white/80 flex flex-col gap-5">
+    <div className="glass-card-apple apple-liquid-glass rounded-3xl p-6 sm:p-7 shadow-xs border border-white/80 flex flex-col gap-5">
       {/* Header and Controls */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div>
-            <h2 className="text-lg font-black text-slate-900 tracking-tight">
+            <h2 className="text-base sm:text-lg font-bold tracking-tight text-[#0F172A]">
               Recent Refund Requests & Decisions
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 font-medium mt-1">
               Live queue of all AI-reviewed tickets and manual overrides
             </p>
           </div>
@@ -97,7 +97,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
                 onClick={() => handleStatusFilterChange(status)}
                 className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === status
-                    ? 'bg-[#4F46E5] text-white shadow-xs font-bold'
+                    ? 'bg-[#7C3AED] text-white shadow-xs font-bold'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
               >
@@ -113,7 +113,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
             ))}
           </div>
 
-          {/* Risk Level Filter with Electric Iris Accent */}
+          {/* Risk Level Filter with Royal Amethyst Accent */}
           <div className="flex bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 text-xs font-semibold backdrop-blur-md">
             {['ALL', 'LOW', 'MEDIUM', 'HIGH'].map((risk) => (
               <button
@@ -122,7 +122,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
                 onClick={() => handleRiskFilterChange(risk)}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                   riskFilter === risk
-                    ? 'bg-[#4F46E5] text-white shadow-xs font-bold'
+                    ? 'bg-[#7C3AED] text-white shadow-xs font-bold'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
               >
@@ -131,15 +131,15 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
             ))}
           </div>
 
-          {/* Search Input with Apple HIG focus */}
-          <div className="relative min-w-[190px]">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          {/* Search Input with high contrast visible icon & border */}
+          <div className="relative min-w-[210px]">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-800 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search tickets, names..."
-              className="w-full bg-white/70 hover:bg-white border border-slate-200/80 rounded-xl pl-8.5 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/40 focus:border-[#4F46E5] transition-all font-medium backdrop-blur-md shadow-2xs"
+              className="w-full bg-white hover:bg-white border-2 border-slate-300 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/30 focus:border-[#7C3AED] transition-all font-medium shadow-2xs"
             />
           </div>
         </div>
@@ -183,7 +183,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
                   }`}
                 >
                   <td className="py-3.5 px-4.5">
-                    <span className="font-mono font-bold text-slate-900 group-hover:text-[#4F46E5] transition-colors">
+                    <span className="font-mono font-bold text-slate-900 group-hover:text-[#7C3AED] transition-colors">
                       {ticket.id}
                     </span>
                     {newTicketIds?.has(ticket.id) && (
@@ -219,7 +219,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
                         size="sm"
                       />
                       {(ticket.reasoning_summary?.includes('[Private Admin Alert]') || (ticket.confidence_score < 0.75 && ticket.decision === 'ESCALATED')) && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 rounded-full px-2 py-0.5 shadow-2xs whitespace-nowrap flex-shrink-0">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#D97706] bg-[#FFFBEB] border border-[#FDE68A] rounded-full px-2 py-0.5 shadow-2xs whitespace-nowrap flex-shrink-0">
                           ⚠️ Review Needed
                         </span>
                       )}
@@ -228,13 +228,21 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
 
                   <td className="py-3.5 px-4.5">
                     {ticket.prompt_injection_detected ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
-                        <ShieldAlert className="w-3 h-3 text-rose-600" />
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF5ED] text-[#FF5500] border border-[#FFD8C2] shadow-2xs">
+                        <ShieldAlert className="w-3 h-3 text-[#FF5500]" />
                         Injection Blocked
                       </span>
+                    ) : ticket.risk_level === 'LOW' ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] shadow-2xs">
+                        LOW RISK
+                      </span>
+                    ) : ticket.risk_level === 'MEDIUM' ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A] shadow-2xs">
+                        MEDIUM RISK
+                      </span>
                     ) : (
-                      <span className="text-[11px] text-slate-500 font-semibold">
-                        {ticket.risk_level} Risk
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF5ED] text-[#FF5500] border border-[#FFD8C2] shadow-2xs">
+                        HIGH RISK
                       </span>
                     )}
                   </td>
@@ -246,9 +254,9 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
                         e.stopPropagation();
                         onSelectTicket(ticket.id);
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/80 hover:bg-[#4F46E5] hover:text-white text-slate-700 text-xs font-bold border border-slate-200/80 transition-all shadow-2xs group-hover:border-[#4F46E5] cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/80 hover:bg-[#7C3AED] hover:text-white text-slate-700 text-xs font-bold border border-slate-200/80 transition-all shadow-2xs group-hover:border-[#7C3AED] cursor-pointer"
                     >
-                      <Eye className="w-3.5 h-3.5 text-[#4F46E5] group-hover:text-white" />
+                      <Eye className="w-3.5 h-3.5 text-[#7C3AED] group-hover:text-white" />
                       <span>Inspect</span>
                       <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-white" />
                     </button>
@@ -277,7 +285,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
               <select
                 value={pageSize}
                 onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                className="bg-white/80 border border-slate-200 text-slate-800 text-[11px] font-semibold rounded-lg px-2.5 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/40"
+                className="bg-white/80 border border-slate-200 text-slate-800 text-[11px] font-semibold rounded-lg px-2.5 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/40"
               >
                 <option value={10}>10</option>
                 <option value={20}>20</option>
@@ -329,7 +337,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
                       onClick={() => setCurrentPage(pageNum)}
                       className={`min-w-[30px] h-7 px-2 rounded-lg font-bold text-xs transition-all cursor-pointer ${
                         validCurrentPage === pageNum
-                          ? 'bg-[#4F46E5] text-white shadow-xs'
+                          ? 'bg-[#7C3AED] text-white shadow-xs'
                           : 'border border-slate-200/80 text-slate-700 bg-white/60 hover:bg-white'
                       }`}
                     >

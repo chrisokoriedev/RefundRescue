@@ -132,7 +132,7 @@ export function AppShell({
         {/* Brand */}
         <div className="flex items-center justify-between px-2 pt-1">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-[14px] bg-gradient-to-tr from-[#3730A3] via-[#4F46E5] to-[#818CF8] flex items-center justify-center shadow-[0_4px_16px_rgba(79,70,229,0.3)] group-hover:scale-105 transition-all duration-300">
+            <div className="w-10 h-10 rounded-[14px] bg-gradient-to-tr from-[#6D28D9] via-[#7C3AED] to-[#8B5CF6] flex items-center justify-center shadow-[0_4px_16px_rgba(124,58,237,0.3)] group-hover:scale-105 transition-all duration-300">
               <div className="w-4.5 h-4.5 rounded-full border-2 border-white/90 flex items-center justify-center">
                 <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
               </div>
@@ -158,7 +158,7 @@ export function AppShell({
         {/* Current View Indicator */}
         <div className="mx-1 px-3.5 py-2.5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/90 shadow-2xs flex items-center justify-between">
           <span className="text-xs font-extrabold text-slate-800 tracking-tight truncate">{getViewTitle()}</span>
-          <span className="text-[9px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE] flex-shrink-0">
+          <span className="text-[9px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE] flex-shrink-0">
             {activeView}
           </span>
         </div>
@@ -174,7 +174,7 @@ export function AppShell({
                 onClick={() => setMobileMenuOpen(false)}
                 className={`font-semibold rounded-2xl px-4 py-3 flex items-center gap-3 transition-all text-xs cursor-pointer ${
                   item.active
-                    ? 'bg-gradient-to-r from-[#4F46E5] to-[#4338CA] text-white shadow-[0_4px_16px_rgba(79,70,229,0.25)] font-bold'
+                    ? 'bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] text-white shadow-[0_4px_16px_rgba(124,58,237,0.25)] font-bold'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/80 font-medium'
                 }`}
               >
@@ -190,7 +190,7 @@ export function AppShell({
       <div className="flex flex-col gap-3 pt-3 border-t border-slate-200/60">
         <div className="px-3.5 py-2.5 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/80 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+            <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse shadow-[0_0_8px_rgba(5,150,105,0.5)]"></span>
             <span className="text-[11px] font-bold text-slate-700">AI Review Engine</span>
           </div>
           <span className="text-[10px] font-black text-slate-400 font-mono px-1.5 py-0.5 rounded bg-slate-100/80">v1.2</span>
@@ -205,7 +205,7 @@ export function AppShell({
             aria-expanded={isSwitcherOpen}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-6.5 h-6.5 rounded-lg bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center flex-shrink-0">
+              <div className="w-6.5 h-6.5 rounded-lg bg-[#F5F3FF] text-[#7C3AED] flex items-center justify-center flex-shrink-0">
                 <ArrowRightLeft className="w-3.5 h-3.5" />
               </div>
               <div className="flex flex-col text-left min-w-0">
@@ -215,7 +215,7 @@ export function AppShell({
                 </span>
               </div>
             </div>
-            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 flex-shrink-0 ${isSwitcherOpen ? 'rotate-180 text-[#4F46E5]' : ''}`} />
+            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 flex-shrink-0 ${isSwitcherOpen ? 'rotate-180 text-[#7C3AED]' : ''}`} />
           </button>
 
           {isSwitcherOpen && (
@@ -236,16 +236,16 @@ export function AppShell({
                         setMobileMenuOpen(false);
                       }}
                       className={`flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors ${
-                        isCurrent ? 'bg-[#EEF2FF] text-[#4F46E5]' : 'hover:bg-slate-50 text-slate-700'
+                        isCurrent ? 'bg-[#F5F3FF] text-[#7C3AED]' : 'hover:bg-slate-50 text-slate-700'
                       }`}
                     >
-                      <div className={`p-1.5 rounded-lg flex-shrink-0 mt-0.5 ${isCurrent ? 'bg-[#4F46E5] text-white shadow-2xs' : 'bg-slate-100 text-slate-500'}`}>
+                      <div className={`p-1.5 rounded-lg flex-shrink-0 mt-0.5 ${isCurrent ? 'bg-[#7C3AED] text-white shadow-2xs' : 'bg-slate-100 text-slate-500'}`}>
                         {opt.id === 'customer' ? <Sparkles className="w-3.5 h-3.5" /> : opt.id === 'admin' ? <LayoutDashboard className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-xs font-bold leading-tight truncate">{opt.label}</span>
-                          {isCurrent && <Check className="w-3.5 h-3.5 text-[#4F46E5] flex-shrink-0" />}
+                          {isCurrent && <Check className="w-3.5 h-3.5 text-[#7C3AED] flex-shrink-0" />}
                         </div>
                         <p className="text-[10px] text-slate-400 leading-tight truncate mt-0.5">{opt.description}</p>
                       </div>
@@ -259,8 +259,8 @@ export function AppShell({
 
         {/* Profile */}
         <div className="flex items-center gap-3 px-1 pt-1">
-          <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-[#4F46E5] to-[#818CF8] p-0.5 shadow-2xs flex-shrink-0">
-            <div className="w-full h-full rounded-[10px] bg-white flex items-center justify-center text-[11px] font-black text-[#4F46E5] uppercase">
+          <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-[#7C3AED] to-[#A78BFA] p-0.5 shadow-2xs flex-shrink-0">
+            <div className="w-full h-full rounded-[10px] bg-white flex items-center justify-center text-[11px] font-black text-[#7C3AED] uppercase">
               {profile.name.slice(0, 2)}
             </div>
           </div>
@@ -274,7 +274,7 @@ export function AppShell({
   );
 
   return (
-    <div className="min-h-screen w-full bg-[#F1F4FA] text-slate-800 flex antialiased selection:bg-[#4F46E5]/20 selection:text-[#4F46E5]">
+    <div className="min-h-screen w-full bg-[#F8FAFC] text-[#0F172A] flex antialiased selection:bg-[#7C3AED]/20 selection:text-[#7C3AED]">
 
       {/* Sidebar on every portal */}
       <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 xl:w-72 h-screen z-40 bg-white/70 backdrop-blur-xl border-r border-white/80 flex-col overflow-y-auto shadow-[4px_0_24px_rgba(15,23,42,0.02)]">
@@ -294,7 +294,7 @@ export function AppShell({
       <div className="flex-1 w-full flex flex-col min-h-screen lg:pl-64 xl:pl-72">
 
         {/* Minimal header: title + contextual actions only */}
-        <header className="sticky top-0 z-30 w-full bg-[#F1F4FA]/80 backdrop-blur-xl border-b border-white/80 px-6 sm:px-9 py-4 flex items-center justify-between transition-all shadow-2xs">
+        <header className="sticky top-0 z-30 w-full bg-[#F8FAFC]/80 backdrop-blur-xl border-b border-white/80 px-6 sm:px-9 py-4 flex items-center justify-between transition-all shadow-2xs">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -304,8 +304,8 @@ export function AppShell({
               <Menu className="w-4 h-4" />
             </button>
             <div className="flex flex-col">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{title}</h1>
-              <p className="text-[11px] font-semibold text-slate-400 mt-0.5">{subtitle || todayFormatted}</p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">{title}</h1>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">{subtitle || todayFormatted}</p>
             </div>
           </div>
 

@@ -23,7 +23,7 @@ export default function PolicyRulesPage() {
         return {
           testedBy: 'Elena Rostova (CUST-103) & Samantha Reed (CUST-110)',
           personaId: 'CUST-103',
-          badge: 'bg-rose-50 text-rose-700 border-rose-200',
+          badge: 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
           icon: XCircle,
           type: 'Deterministic Hard Gate',
           tradeoff: 'Enforced strictly in code before LLM to guarantee zero hallucinations.'
@@ -32,7 +32,7 @@ export default function PolicyRulesPage() {
         return {
           testedBy: 'Marcus Vance (CUST-102) & Priya Patel (CUST-112)',
           personaId: 'CUST-102',
-          badge: 'bg-rose-50 text-rose-700 border-rose-200',
+          badge: 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
           icon: XCircle,
           type: 'Deterministic Hard Gate',
           tradeoff: 'Temporal arithmetic check prevents LLM from approving expired orders.'
@@ -41,7 +41,7 @@ export default function PolicyRulesPage() {
         return {
           testedBy: 'David Kim (CUST-104: $850 TV) & Jordan Miller (CUST-109: $1.2k Laptop)',
           personaId: 'CUST-104',
-          badge: 'bg-amber-50 text-amber-700 border-amber-200',
+          badge: 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]',
           icon: AlertTriangle,
           type: 'Deterministic Escalation Gate',
           tradeoff: 'Guarantees claims > $500 always route to human supervisors.'
@@ -50,7 +50,7 @@ export default function PolicyRulesPage() {
         return {
           testedBy: 'Sarah Jenkins (CUST-101: Damaged Cookware) & Chloe Bennet (CUST-105)',
           personaId: 'CUST-101',
-          badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          badge: 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]',
           icon: CheckCircle2,
           type: 'AI Review (semantic)',
           tradeoff: 'Gemini evaluates damage claims and drafts compassionate recovery responses.'
@@ -59,7 +59,7 @@ export default function PolicyRulesPage() {
         return {
           testedBy: 'Hacker Eve (CUST-106: Prompt Injection) & Arthur (CUST-107: Contradiction)',
           personaId: 'CUST-106',
-          badge: 'bg-rose-100 text-rose-800 border-rose-300 font-bold',
+          badge: 'bg-[#FFF5ED] text-[#FF5500] border-[#FFD8C2] font-bold',
           icon: ShieldCheck,
           type: 'Hybrid Guardrail + Heuristic',
           tradeoff: 'Dual regex pre-scanner blocks jailbreaks and contradictory statements.'
@@ -82,15 +82,15 @@ export default function PolicyRulesPage() {
       title="Refund Policy Rules"
     >
       {/* Header Banner Card */}
-      <div className="apple-liquid-glass rounded-3xl p-6 sm:p-7 shadow-xs border border-white/80 flex flex-col gap-2.5 relative overflow-hidden">
+      <div className="glass-card-apple apple-liquid-glass rounded-3xl p-6 sm:p-7 shadow-xs border border-white/80 flex flex-col gap-2.5 relative overflow-hidden">
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-indigo-50 text-[#4F46E5] border border-indigo-100 flex items-center gap-1.5 shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-[#4F46E5]" />
+          <span className="px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE] flex items-center gap-1.5 shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#7C3AED]" />
             Business Rule Specifications
           </span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-          <FileText className="w-6 h-6 text-[#4F46E5]" />
+        <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight flex items-center gap-2.5">
+          <FileText className="w-6 h-6 text-[#7C3AED]" />
           <span>Active Store Refund Policies & Constraints</span>
         </h2>
         <p className="text-xs text-slate-500 leading-relaxed max-w-3xl font-medium">
@@ -111,14 +111,14 @@ export default function PolicyRulesPage() {
             return (
               <div
                 key={p.code}
-                className="p-6 apple-liquid-glass border border-white/80 rounded-3xl shadow-xs flex flex-col gap-3 hover:shadow-sm transition-all"
+                className="p-6 glass-card-apple apple-liquid-glass border border-white/80 rounded-3xl shadow-xs flex flex-col gap-3 hover:shadow-sm transition-all"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs font-black text-[#4F46E5] bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 shadow-2xs">
+                    <span className="font-mono text-xs font-black text-[#7C3AED] bg-[#F5F3FF] px-2.5 py-1 rounded-lg border border-[#DDD6FE] shadow-2xs">
                       {p.code}
                     </span>
-                    <h3 className="font-black text-sm text-slate-900">{p.name}</h3>
+                    <h3 className="font-black text-sm text-[#0F172A]">{p.name}</h3>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -147,7 +147,7 @@ export default function PolicyRulesPage() {
                       <span className="font-bold text-slate-800">{meta.testedBy}</span>
                     </div>
                     <span className="text-[10px] text-slate-400 mt-2 font-medium">
-                      Simulated via the customer portal's sample-customer picker
+                      Simulated via the customer portal sample-customer picker
                     </span>
                   </div>
                 </div>

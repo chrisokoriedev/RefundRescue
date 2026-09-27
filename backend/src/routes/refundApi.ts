@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getCustomers, getCustomerById, getOrderById } from '../controllers/customerController.js';
-import { evaluateRefund, clarifyRefund, getPolicies, getChatMessages, getRecentConversations } from '../controllers/refundController.js';
+import { evaluateRefund, clarifyRefund, getPolicies, getChatMessages, getRecentConversations, sendAgentReply } from '../controllers/refundController.js';
 import {
   getMetrics,
   getTickets,
@@ -17,6 +17,7 @@ import {
   evaluateRefundSchema,
   clarifySchema,
   overrideTicketSchema,
+  agentReplySchema,
   ticketsQuerySchema,
   createTicketSchema,
   idParamSchema,
@@ -64,6 +65,7 @@ router.get('/policy/rules', getPolicies);
 // Chat history routes (persisted in SQLite)
 router.get('/chat/history', asyncErrorWrapper(getChatMessages));
 router.get('/chat/recent', asyncErrorWrapper(getRecentConversations));
+router.post('/chat/agent-reply', validateBody(agentReplySchema), asyncErrorWrapper(sendAgentReply));
 
 // Products catalog route (predefined store catalog)
 router.get('/products', asyncErrorWrapper(getProductsHandler));

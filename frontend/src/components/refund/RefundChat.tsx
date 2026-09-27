@@ -2,12 +2,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Customer, Order, RefundEvaluationResponse, submitRefundEvaluation, requestClarification, fetchChatHistory } from '../../lib/refundApi';
-import { Send, Sparkles, AlertCircle, Bot, User, RefreshCw, ShieldCheck, Scale, Brain, Save, HelpCircle, CheckCircle2, Clock, ExternalLink } from 'lucide-react';
+import { Send, Sparkles, AlertCircle, Bot, User, RefreshCw, ShieldCheck, Scale, Brain, Save, HelpCircle, CheckCircle2, Clock, ExternalLink, Headset } from 'lucide-react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 interface ChatMessage {
   id: string;
-  sender: 'customer' | 'ai';
+  sender: 'customer' | 'ai' | 'agent';
   text: string;
   decision?: 'APPROVED' | 'DENIED' | 'ESCALATED';
   ticketId?: string;
@@ -107,6 +107,40 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
       clearTimeout(focusTimer);
     };
   }, [order.id, customer.id, customer.name]);
+
+  // Periodic polling so customer receives live takeover messages from the admin specialist in real time
+  useEffect(() => {
+    let isMounted = true;
+    const interval = setInterval(async () => {
+      try {
+        const history = await fetchChatHistory(order.id, customer.id);
+        if (!isMounted) return;
+        if (history && history.length > 0) {
+          setMessages((prev) => {
+            // Check if there are new messages or changes in count
+            if (history.length !== prev.length || history.some((h, idx) => prev[idx]?.id !== h.id)) {
+              return history.map((m) => ({
+                id: m.id,
+                sender: m.sender,
+                text: m.text,
+                decision: (m.decision as 'APPROVED' | 'DENIED' | 'ESCALATED') || undefined,
+                ticketId: m.ticket_id || undefined,
+                timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              }));
+            }
+            return prev;
+          });
+        }
+      } catch {
+        // Silently swallow polling network glitch
+      }
+    }, 2500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [order.id, customer.id]);
 
   const resetChat = React.useCallback(() => {
     msgCounter.current += 1;
@@ -257,23 +291,30 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
   }, [initialPrompt, autoSendPrompt, order.id]);
 
 
+  const hasAgentJoined = messages.some((m) => m.sender === 'agent');
+
   return (
-    <div className="apple-liquid-glass rounded-3xl p-6 sm:p-7 shadow-xs border border-white/80 flex flex-col h-[700px]">
+    <div className="glass-card-apple apple-liquid-glass rounded-3xl p-6 sm:p-7 shadow-xs border border-white/80 flex flex-col">
       {/* Chat Header */}
       <div className="flex items-center justify-between border-b border-slate-200/60 pb-4 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-[#4F46E5] border border-indigo-100 flex items-center justify-center shadow-2xs">
-            <Bot className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE] flex items-center justify-center shadow-2xs">
+            {hasAgentJoined ? <Headset className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2.5">
-              <span>AI Support Agent</span>
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold shadow-2xs">
-                Active Review
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172A] flex items-center gap-2.5">
+              <span>{hasAgentJoined ? 'Human Specialist Takeover' : 'AI Support Agent'}</span>
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] font-bold shadow-2xs flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse" />
+                {hasAgentJoined ? 'Specialist Live' : 'Active Review'}
               </span>
             </h3>
             <p className="text-xs text-slate-500 font-medium">
-              {isSubmitting ? 'Checking your claim against store policy…' : 'Evaluating against store policy rules and fraud guardrails'}
+              {hasAgentJoined
+                ? 'A human support specialist is currently managing this conversation directly'
+                : isSubmitting
+                ? 'Checking your claim against store policy…'
+                : 'Evaluating against store policy rules and fraud guardrails'}
             </p>
           </div>
         </div>
@@ -289,10 +330,27 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
         </button>
       </div>
 
+      {/* Live Human Specialist Banner if an agent has taken over */}
+      {hasAgentJoined && (
+        <div className="mb-3.5 p-3 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] text-xs flex items-center justify-between shadow-2xs animate-in fade-in duration-300">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span className="font-bold text-slate-900">Live Support Specialist Connected:</span>
+            <span className="text-slate-700">A human specialist is reviewing and chatting with you directly.</span>
+          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+            HUMAN TAKEOVER
+          </span>
+        </div>
+      )}
+
       {/* Decision Pipeline Strip — lights up stage by stage while the AI works */}
       <div
         className={`mb-3.5 rounded-2xl border px-4 py-2.5 flex items-center justify-between gap-1 transition-colors duration-300 ${
-          isSubmitting ? 'bg-indigo-50/60 border-indigo-100' : 'bg-white/60 border-white/80 shadow-2xs backdrop-blur-md'
+          isSubmitting ? 'bg-purple-50/70 border-purple-200' : 'bg-white/60 border-white/80 shadow-2xs backdrop-blur-md'
         }`}
         aria-label="How your refund decision is made"
       >
@@ -313,7 +371,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
               <div
                 className={`flex items-center gap-1.5 px-1.5 transition-all duration-300 ${
                   isActive
-                    ? 'text-[#4F46E5] scale-105'
+                    ? 'text-[#7C3AED] scale-105'
                     : isDone
                       ? 'text-emerald-700'
                       : 'text-slate-400'
@@ -337,7 +395,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
       {/* Suggested Prompt Chips */}
       <div className="mb-3.5">
         <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1.5 flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-[#4F46E5]" />
+          <Sparkles className="w-3 h-3 text-[#7C3AED]" />
           Reviewer Quick Test Suggestions:
         </span>
         <div className="flex flex-wrap gap-1.5">
@@ -355,19 +413,26 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
         </div>
       </div>
 
-      {/* Chat Messages Stream with Auto-Animate Layout */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto pr-1 scroll-smooth">
+      {/* Chat Messages Stream — Not scrollable, natural vertical layout */}
+      <div ref={scrollRef} className="flex flex-col space-y-3.5 my-1">
         <div ref={chatBodyRef} className="space-y-3.5">
           {messages.map((msg) => {
             const isUser = msg.sender === 'customer';
+            const isAgent = msg.sender === 'agent';
             return (
               <div
                 key={msg.id}
                 className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
               >
                 {!isUser && (
-                  <div className="w-8 h-8 rounded-xl bg-indigo-50 text-[#4F46E5] border border-indigo-100 flex-shrink-0 flex items-center justify-center mt-0.5 shadow-2xs">
-                    <Bot className="w-4 h-4" />
+                  <div
+                    className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center mt-0.5 shadow-2xs ${
+                      isAgent
+                        ? 'bg-[#7C3AED] text-white'
+                        : 'bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE]'
+                    }`}
+                  >
+                    {isAgent ? <Headset className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </div>
                 )}
 
@@ -375,14 +440,29 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
                   <div
                     className={`p-4 rounded-2xl text-xs leading-relaxed ${
                       isUser
-                        ? 'bg-gradient-to-r from-[#4F46E5] to-[#6366F1] text-white rounded-tr-xs shadow-md font-medium'
+                        ? 'bg-gradient-to-r from-[#7C3AED] to-[#8B5CF6] text-white rounded-tr-xs shadow-md font-medium'
+                        : isAgent
+                        ? 'apple-glass-elevated bg-gradient-to-br from-[#FAF5FF] to-white border-2 border-[#DDD6FE] text-slate-900 rounded-tl-xs shadow-sm font-medium'
                         : msg.needsInfo
-                          ? 'bg-amber-50/95 border border-amber-200/90 text-amber-950 rounded-tl-xs shadow-xs'
+                          ? 'bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] rounded-tl-xs shadow-xs'
                           : 'apple-glass-elevated bg-white/90 backdrop-blur-md border border-white/80 text-slate-800 rounded-tl-xs shadow-xs font-medium'
                     }`}
                   >
-                    {!isUser && msg.needsInfo && (
-                      <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-2">
+                    {isAgent && (
+                      <div className="flex items-center justify-between gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#7C3AED] mb-2 pb-1.5 border-b border-[#DDD6FE]/70">
+                        <div className="flex items-center gap-1.5">
+                          <Headset className="w-3.5 h-3.5" />
+                          <span>Support Specialist (Live Human Review)</span>
+                        </div>
+                        <span className="flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          Verified Specialist
+                        </span>
+                      </div>
+                    )}
+
+                    {!isUser && !isAgent && msg.needsInfo && (
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#D97706] mb-2">
                         <HelpCircle className="w-3.5 h-3.5" />
                         Need a bit more info
                       </span>
@@ -394,20 +474,20 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
                       <div className="mt-3.5 pt-3 border-t border-slate-200/70 flex flex-col gap-2">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           {msg.decision === 'APPROVED' && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-2xs">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] text-xs font-bold shadow-2xs">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />
                               Refund Approved
                             </span>
                           )}
                           {msg.decision === 'ESCALATED' && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-2xs">
-                              <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A] text-xs font-bold shadow-2xs">
+                              <Clock className="w-3.5 h-3.5 text-[#D97706]" />
                               Under Specialist Review
                             </span>
                           )}
                           {msg.decision === 'DENIED' && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold shadow-2xs">
-                              <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] text-xs font-bold shadow-2xs">
+                              <HelpCircle className="w-3.5 h-3.5 text-[#DC2626]" />
                               Policy Notice
                             </span>
                           )}
@@ -426,7 +506,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
                               href="/admin#tickets"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[10px] text-slate-400 hover:text-[#4F46E5] transition-colors inline-flex items-center gap-1 font-semibold"
+                              className="text-[10px] text-slate-400 hover:text-[#7C3AED] transition-colors inline-flex items-center gap-1 font-semibold"
                               title="Open Support Dashboard to view internal AI audit trace"
                             >
                               <span>Support Audit View</span>
@@ -452,14 +532,14 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
 
           {isSubmitting && (
             <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-[#4F46E5] border border-indigo-100 flex-shrink-0 flex items-center justify-center animate-pulse shadow-2xs">
+              <div className="w-8 h-8 rounded-xl bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE] flex-shrink-0 flex items-center justify-center animate-pulse shadow-2xs">
                 <Bot className="w-4 h-4" />
               </div>
               <div className="p-3.5 rounded-2xl bg-white/80 border border-white/80 backdrop-blur-md text-xs text-slate-700 flex items-center gap-3 shadow-xs">
                 <span className="flex gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5] animate-bounce"></span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5] animate-bounce [animation-delay:0.2s]"></span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5] animate-bounce [animation-delay:0.4s]"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] animate-bounce"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] animate-bounce [animation-delay:0.2s]"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] animate-bounce [animation-delay:0.4s]"></span>
                 </span>
                 <span key={thinkingStep} className="font-semibold text-slate-800">
                   {THINKING_STEPS[thinkingStep]}
@@ -478,13 +558,13 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
         </div>
       )}
 
-      {/* Input Form Island */}
+      {/* Input Form Island — brought up right below messages with visible 2px border */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           handleSend();
         }}
-        className="mt-3.5 apple-liquid-glass rounded-2xl p-1.5 shadow-xs border border-white/80 flex items-center gap-2"
+        className="mt-4 bg-white/95 rounded-2xl p-1.5 shadow-sm border-2 border-slate-300 hover:border-slate-400 focus-within:border-[#7C3AED] focus-within:ring-2 focus-within:ring-[#7C3AED]/20 transition-all flex items-center gap-2"
       >
         <input
           ref={inputRef}
@@ -493,7 +573,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder={`Describe refund reason for order #${order.id}...`}
           disabled={isSubmitting}
-          className="flex-1 bg-transparent border-0 text-slate-900 text-xs px-3.5 py-2 focus:outline-none placeholder-slate-400 font-medium"
+          className="flex-1 bg-transparent border-0 text-slate-900 text-xs px-3.5 py-2.5 focus:outline-none placeholder-slate-400 font-medium"
         />
         <button
           type="submit"
@@ -501,8 +581,8 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
           title="Send (or press Enter)"
           className={`px-5 py-2.5 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 ${
             inputMessage.trim() && !isSubmitting
-              ? 'bg-[#4F46E5] hover:bg-[#4338CA] hover:scale-[1.02]'
-              : 'bg-[#4F46E5]'
+              ? 'bg-[#7C3AED] hover:bg-[#6D28D9] hover:scale-[1.02]'
+              : 'bg-[#7C3AED]'
           }`}
         >
           <Send className={`w-3.5 h-3.5 ${isSubmitting ? 'animate-pulse' : ''}`} />

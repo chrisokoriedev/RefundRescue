@@ -38,6 +38,13 @@ export const overrideTicketSchema = z.object({
   notes: z.string().min(1, 'audit notes are required').max(2000)
 });
 
+export const agentReplySchema = z.object({
+  orderId: z.string().min(1, 'orderId is required'),
+  customerId: z.string().min(1, 'customerId is required'),
+  message: z.string().min(1, 'message is required').max(5000),
+  ticketId: z.string().optional()
+});
+
 export const ticketsQuerySchema = z.object({
   status: z.enum(['APPROVED', 'DENIED', 'ESCALATED']).optional(),
   riskLevel: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),

@@ -1,3 +1,4 @@
+@import url('https://fonts.cdnfonts.com/css/sf-pro-display');
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
@@ -22,44 +23,94 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Apple & Bespoke Design Tokens (from Section 1 of plan) */
+  --color-apple-iris: #7C3AED;
+  --color-apple-iris-hover: #6D28D9;
+  --color-apple-iris-tint: #F5F3FF;
+  --color-apple-indigo: #8B5CF6;
+  --color-apple-orange: #FF5500;
+  --color-apple-orange-hover: #FF6433;
+  --color-apple-orange-tint: #FFF5ED;
+  --color-apple-jade: #059669;
+  --color-apple-jade-hover: #10B981;
+  --color-apple-jade-tint: #ECFDF5;
+  --color-apple-amber: #D97706;
+  --color-apple-amber-hover: #B45309;
+  --color-apple-amber-tint: #FFFBEB;
+  --color-apple-mist: #F8FAFC;
+  --color-apple-obsidian: #0F172A;
+  --color-apple-border: #E2E8F0;
+
+  /* Apple squircle radius hierarchy */
   --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 6px);
   --radius-2xl: calc(var(--radius) + 12px);
   --radius-3xl: calc(var(--radius) + 20px);
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", var(--font-jakarta), system-ui, sans-serif;
+
+  /* Distinctive Typography Hierarchy */
+  --font-sans: var(--font-outfit), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-outfit), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
   --radius: 1.125rem; /* Apple squircle baseline */
-  --background: #F1F4FA;
-  --foreground: #0B0F19;
+  
+  /* Neutral Canvas (Liquid Mist / Titanium from Section 1) */
+  --background: #F8FAFC;
+  --foreground: #0F172A;
   --card: rgba(255, 255, 255, 0.78);
-  --card-foreground: #0B0F19;
-  --popover: rgba(255, 255, 255, 0.92);
-  --popover-foreground: #0B0F19;
-  --primary: #4F46E5; /* Electric Iris — distinctive, human, premium */
+  --card-foreground: #0F172A;
+  --popover: rgba(255, 255, 255, 0.94);
+  --popover-foreground: #0F172A;
+
+  /* Primary Accent: Royal Amethyst / Velvet Violet (distinctive, non-AI) */
+  --primary: #7C3AED;
+  --primary-hover: #6D28D9;
   --primary-foreground: #FFFFFF;
+  --apple-iris: #7C3AED;
+  --apple-iris-hover: #6D28D9;
+  --apple-iris-tint: #F5F3FF;
+  --apple-indigo: #8B5CF6;
+
+  /* Secondary Signal: International Orange */
+  --apple-orange: #FF5500;
+  --apple-orange-hover: #FF6433;
+  --apple-orange-tint: #FFF5ED;
+
+  /* Success: Cupertino Jade / Emerald */
+  --apple-jade: #059669;
+  --apple-jade-hover: #10B981;
+  --apple-jade-tint: #ECFDF5;
+
+  /* Caution / Escalation: Warm Amber */
+  --apple-amber: #D97706;
+  --apple-amber-hover: #B45309;
+  --apple-amber-tint: #FFFBEB;
+
+  /* Neutral Canvas Tokens */
+  --apple-mist: #F8FAFC;
+  --apple-obsidian: #0F172A;
+  --apple-border: #E2E8F0;
+
   --secondary: #F1F5F9;
   --secondary-foreground: #1E293B;
   --muted: #F8FAFC;
   --muted-foreground: #64748B;
-  --accent: #EEF2FF;
-  --accent-foreground: #4F46E5;
+  --accent: #F5F3FF;
+  --accent-foreground: #7C3AED;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(226, 232, 240, 0.8);
-  --input: rgba(226, 232, 240, 0.8);
-  --ring: #4F46E5;
+  --border: rgba(226, 232, 240, 0.85);
+  --input: rgba(226, 232, 240, 0.85);
+  --ring: #7C3AED;
 
   /* Apple Liquid Glass tokens */
   --apple-glass-bg: rgba(255, 255, 255, 0.74);
-  --apple-glass-border: rgba(255, 255, 255, 0.85);
-  --apple-iris: #4F46E5;
-  --apple-orange: #FF5500;
-  --apple-jade: #059669;
+  --apple-glass-border: rgba(255, 255, 255, 0.88);
 }
 
 @layer base {
@@ -67,31 +118,77 @@
     @apply border-border;
   }
   body {
-    background-color: #F1F4FA;
+    background-color: #F8FAFC;
     background-image: 
-      radial-gradient(at 10% 10%, rgba(79, 70, 229, 0.04) 0px, transparent 50%),
-      radial-gradient(at 90% 90%, rgba(255, 85, 0, 0.03) 0px, transparent 50%),
-      radial-gradient(at 50% 50%, rgba(5, 150, 105, 0.02) 0px, transparent 60%);
+      radial-gradient(at 10% 10%, rgba(124, 58, 237, 0.055) 0px, transparent 50%),
+      radial-gradient(at 90% 90%, rgba(255, 85, 0, 0.035) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(5, 150, 105, 0.025) 0px, transparent 60%);
     background-attachment: fixed;
-    color: #0B0F19;
+    color: #0F172A;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.011em;
+    letter-spacing: -0.012em;
   }
 }
 
-/* Apple Liquid Glass Utility Classes */
-.apple-liquid-glass {
-  background: rgba(255, 255, 255, 0.74);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.88);
-  box-shadow: 
-    0 10px 30px -10px rgba(15, 23, 42, 0.06),
-    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+/* Custom scrollbar for customer side panel */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.55);
 }
 
+/* =========================================================================
+   Apple "Liquid Glass" Material Hierarchy (Section 3 of Plan)
+   ========================================================================= */
+
+/* Tier 1: Subtle / Pill Glass */
+.glass-surface-subtle,
+.apple-tier-1 {
+  background: rgba(255, 255, 255, 0.60);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.80);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+/* Tier 2: Card / Surface Glass */
+.glass-card-apple,
+.apple-liquid-glass,
+.apple-tier-2 {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.90);
+  box-shadow: 
+    0 8px 30px rgba(15, 23, 42, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+}
+
+/* Tier 3: Elevated / Modal Glass */
+.glass-modal,
+.apple-glass-elevated,
+.apple-tier-3 {
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    0 20px 60px -15px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+}
+
+/* Apple Liquid Glass Pill */
+.liquid-glass-pill,
 .apple-glass-pill {
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(16px) saturate(180%);
@@ -104,6 +201,7 @@
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.liquid-glass-pill:hover,
 .apple-glass-pill:hover {
   background: rgba(255, 255, 255, 0.85);
   border-color: rgba(255, 255, 255, 0.95);
@@ -112,24 +210,91 @@
     0 1px 0 rgba(255, 255, 255, 1) inset;
 }
 
-.apple-glass-elevated {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(32px) saturate(190%);
-  -webkit-backdrop-filter: blur(32px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 
-    0 24px 60px -15px rgba(15, 23, 42, 0.14),
-    0 0 0 1px rgba(255, 255, 255, 0.7) inset;
-}
-
-.apple-spring {
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+/* Specular Rim Lighting (Gradient Border) */
+.specular-rim {
+  position: relative;
+  border: 1px solid transparent;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.25));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
 }
 
 .specular-rim-glow {
   box-shadow: 
     0 0 0 1px rgba(255, 255, 255, 0.7) inset,
     0 8px 24px -6px rgba(79, 70, 229, 0.12);
+}
+
+.apple-spring {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* =========================================================================
+   Apple Typography Hierarchy Utility Classes (Section 2 of Plan)
+   ========================================================================= */
+
+.apple-page-title {
+  font-family: var(--font-sans);
+  font-size: 1.5rem; /* 24px */
+  line-height: 2rem;
+  font-weight: 800; /* font-extrabold */
+  letter-spacing: -0.025em;
+  color: #0F172A;
+}
+@media (min-width: 640px) {
+  .apple-page-title {
+    font-size: 1.875rem; /* 30px */
+    line-height: 2.25rem;
+  }
+}
+
+.apple-section-header {
+  font-family: var(--font-sans);
+  font-size: 1rem; /* 16px */
+  line-height: 1.5rem;
+  font-weight: 700; /* font-bold */
+  letter-spacing: -0.02em;
+  color: #0F172A;
+}
+@media (min-width: 640px) {
+  .apple-section-header {
+    font-size: 1.125rem; /* 18px */
+    line-height: 1.75rem;
+  }
+}
+
+.apple-subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.75rem; /* 12px */
+  line-height: 1rem;
+  font-weight: 500; /* font-medium */
+  color: #64748B;
+}
+
+.apple-kpi-number {
+  font-family: var(--font-sans);
+  font-size: 1.875rem; /* 30px */
+  line-height: 2.25rem;
+  font-weight: 900; /* font-black */
+  letter-spacing: -0.03em;
+  color: #0F172A;
+}
+@media (min-width: 640px) {
+  .apple-kpi-number {
+    font-size: 2.25rem; /* 36px */
+    line-height: 2.5rem;
+  }
+}
+
+.apple-pill-badge {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 700; /* font-bold */
+  text-transform: uppercase;
+  letter-spacing: 0.05em; /* uppercase tracking-wider */
 }
 
 /* Custom subtle scrollbar */

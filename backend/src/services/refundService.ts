@@ -232,3 +232,54 @@ export function getRecentChats(limit: number = 20) {
     LIMIT ?
   `).all(limit);
 }
+
+export function sendAdminChatMessage(orderId: string, customerId: string, message: string, ticketId?: string) {
+  const db = getDb();
+  const msgId = `MSG-${uuidv4().substring(0, 8).toUpperCase()}`;
+  const now = new Date().toISOString();
+
+  const insertChat = db.prepare(`
+    INSERT INTO chat_messages (id, ticket_id, order_id, customer_id, sender, text, decision, confidence_score, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertChat.run(
+    msgId,
+    ticketId || null,
+    orderId,
+    customerId,
+    'agent',
+    message,
+    null,
+    1.0,
+    now
+  );
+
+  // If a ticket exists, log this takeover in audit_logs!
+  if (ticketId) {
+    const insertAudit = db.prepare(`
+      INSERT INTO audit_logs (id, ticket_id, actor, action, notes, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    insertAudit.run(
+      `AUD-${uuidv4().substring(0, 8).toUpperCase()}`,
+      ticketId,
+      'HUMAN_SUPERVISOR',
+      'LIVE_TAKEOVER_REPLY',
+      `Support Specialist replied directly: "${message.length > 80 ? message.substring(0, 77) + '...' : message}"`,
+      now
+    );
+  }
+
+  return {
+    id: msgId,
+    ticket_id: ticketId || null,
+    order_id: orderId,
+    customer_id: customerId,
+    sender: 'agent' as const,
+    text: message,
+    decision: null,
+    confidence_score: 1.0,
+    created_at: now
+  };
+}
