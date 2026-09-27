@@ -6,8 +6,9 @@ import { MetricsSummary } from '../../components/admin/MetricsSummary';
 import { TicketTable } from '../../components/admin/TicketTable';
 import { AuditDrawer } from '../../components/admin/AuditDrawer';
 import { OverrideModal } from '../../components/admin/OverrideModal';
+import { ResetDataModal } from '../../components/admin/ResetDataModal';
 import { AdminMetrics, RefundTicket, fetchAdminMetrics, fetchAdminTickets } from '../../lib/refundApi';
-import { RefreshCw, ShieldAlert } from 'lucide-react';
+import { RefreshCw, ShieldAlert, RotateCcw } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -21,10 +22,11 @@ export default function AdminDashboardPage() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [overrideTarget, setOverrideTarget] = useState<RefundTicket | null>(null);
   const [isOverrideOpen, setIsOverrideOpen] = useState<boolean>(false);
+  const [isResetOpen, setIsResetOpen] = useState<boolean>(false);
 
-  const loadData = React.useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const loadData = React.useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    if (!silent) setError(null);
     try {
       const [metricsData, ticketsData] = await Promise.all([
         fetchAdminMetrics(),
@@ -41,24 +43,29 @@ export default function AdminDashboardPage() {
       }
       knownTicketIds.current = incoming;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to connect to backend API.';
-      setError(msg);
+      if (!silent) {
+        const msg = err instanceof Error ? err.message : 'Failed to connect to backend API.';
+        setError(msg);
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadData();
+      loadData(false);
     }, 0);
     return () => clearTimeout(timer);
   }, [loadData]);
 
-  // Poll every 10s so customer-portal submissions show up here automatically
+  // Silent refresh when browser tab regains focus (no aggressive interval flashing)
   useEffect(() => {
-    const interval = setInterval(loadData, 10_000);
-    return () => clearInterval(interval);
+    const handleFocus = () => {
+      loadData(true);
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [loadData]);
 
   // Clear NEW highlights after 30s so the badge stays meaningful
@@ -74,15 +81,28 @@ export default function AdminDashboardPage() {
   };
 
   const headerActions = (
-    <button
-      type="button"
-      onClick={loadData}
-      disabled={isLoading}
-      className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200/80 shadow-2xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-    >
-      <RefreshCw className={`w-3.5 h-3.5 text-[#3861FB] ${isLoading ? 'animate-spin' : ''}`} />
-      <span>Refresh Data</span>
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setIsResetOpen(true)}
+        className="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 text-xs font-semibold border border-slate-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+        title="Wipe test data and restore baseline demo database"
+      >
+        <RotateCcw className="w-3.5 h-3.5 text-rose-500" />
+        <span className="hidden sm:inline">Reset Database</span>
+        <span className="sm:hidden">Reset</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => loadData(false)}
+        disabled={isLoading}
+        className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200/80 shadow-2xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 text-[#3861FB] ${isLoading ? 'animate-spin' : ''}`} />
+        <span>Refresh Data</span>
+      </button>
+    </div>
   );
 
   return (
@@ -98,7 +118,7 @@ export default function AdminDashboardPage() {
             <span>{error}</span>
           </div>
           <button
-            onClick={loadData}
+            onClick={() => loadData(false)}
             className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-xs font-bold transition-colors cursor-pointer"
           >
             Retry Connection
@@ -135,7 +155,16 @@ export default function AdminDashboardPage() {
         }}
         ticket={overrideTarget}
         onSuccess={() => {
-          loadData();
+          loadData(false);
+        }}
+      />
+
+      {/* Confirmation modal to wipe test data and restore demo seed */}
+      <ResetDataModal
+        isOpen={isResetOpen}
+        onClose={() => setIsResetOpen(false)}
+        onSuccess={() => {
+          loadData(false);
         }}
       />
     </AppShell>

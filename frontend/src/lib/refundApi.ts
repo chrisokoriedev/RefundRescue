@@ -222,3 +222,45 @@ export async function overrideTicket(
   }
   return res.json();
 }
+
+export interface ChatMessageRecord {
+  id: string;
+  ticket_id?: string | null;
+  order_id: string;
+  customer_id: string;
+  sender: 'customer' | 'ai';
+  text: string;
+  decision?: 'APPROVED' | 'DENIED' | 'ESCALATED' | null;
+  confidence_score?: number | null;
+  created_at: string;
+}
+
+export async function fetchChatHistory(orderId: string, customerId?: string): Promise<ChatMessageRecord[]> {
+  const query = new URLSearchParams({ orderId });
+  if (customerId) query.set('customerId', customerId);
+  const res = await fetch(`${API_BASE}/api/chat/history?${query.toString()}`);
+  if (!res.ok) throw new Error('Failed to fetch chat history');
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function fetchRecentChats(limit = 20): Promise<ChatMessageRecord[]> {
+  const res = await fetch(`${API_BASE}/api/chat/recent?limit=${limit}`);
+  if (!res.ok) throw new Error('Failed to fetch recent chats');
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function resetDatabaseData(): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/api/admin/reset-data`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to reset database' }));
+    throw new Error(err.error || 'Failed to reset database');
+  }
+  return res.json();
+}
+
+

@@ -48,7 +48,7 @@ export function getMetrics(req: Request, res: Response) {
 
 export function getTickets(req: Request, res: Response) {
   try {
-    const { limit = 50, offset = 0 } = req.query;
+    const { limit = 10, offset = 0 } = req.query;
     const status = req.query.status ? String(req.query.status) : undefined;
     const riskLevel = req.query.riskLevel ? String(req.query.riskLevel) : undefined;
     const db = getDb();
@@ -167,4 +167,17 @@ export function overrideTicket(req: Request, res: Response) {
       updatedAt: now
     }
   });
+}
+
+export async function resetDatabase(req: Request, res: Response) {
+  try {
+    const { resetAndSeedDatabase } = await import('../db/sqlite.js');
+    resetAndSeedDatabase();
+    return res.json({
+      success: true,
+      message: 'Database has been cleanly reset to default demo seed data.'
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
 }

@@ -18,7 +18,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
   const [riskFilter, setRiskFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(8);
+  const [pageSize, setPageSize] = useState<number>(10);
 
   // Quick-preset: jump straight to the escalation queue (human review work)
   const showEscalationQueueOnly = statusFilter === 'ESCALATED';
@@ -273,10 +273,9 @@ export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
               className="bg-slate-50 border border-slate-200 text-slate-800 text-[11px] font-semibold rounded-md px-2 py-0.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#3861FB]"
             >
-              <option value={5}>5</option>
-              <option value={8}>8</option>
-              <option value={15}>15</option>
-              <option value={25}>25</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
             </select>
           </div>
         </div>

@@ -83,6 +83,20 @@ export function initDatabase(dbPath: string = './data/revrescue.db'): DatabaseSy
       created_at TEXT NOT NULL,
       FOREIGN KEY (ticket_id) REFERENCES refund_tickets(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id TEXT PRIMARY KEY,
+      ticket_id TEXT,
+      order_id TEXT NOT NULL,
+      customer_id TEXT NOT NULL,
+      sender TEXT NOT NULL, -- 'customer' | 'ai'
+      text TEXT NOT NULL,
+      decision TEXT,
+      confidence_score REAL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (order_id) REFERENCES orders(id),
+      FOREIGN KEY (customer_id) REFERENCES customers(id)
+    );
   `);
 
   return dbInstance;
@@ -120,6 +134,44 @@ export function seedDatabase(): void {
 
   const insertOrderItem = db.prepare(`
     INSERT OR REPLACE INTO order_items (id, order_id, product_name, sku, quantity, unit_price, is_final_sale, category)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const o of seedOrders) {
+    insertOrder.run(o.id, o.customer_id, o.total_amount, o.currency, o.status, o.order_date, o.shipping_address, o.scenarioDescription, o.expectedOutcome);
+    for (const item of o.items) {
+      insertOrderItem.run(item.id, item.order_id, item.product_name, item.sku, item.quantity, item.unit_price, item.is_final_sale, item.category);
+    }
+  }
+}
+
+export function resetAndSeedDatabase(): void {
+  const db = getDb();
+  db.exec(`
+    DELETE FROM audit_logs;
+    DELETE FROM refund_tickets;
+    DELETE FROM chat_messages;
+    DELETE FROM order_items;
+    DELETE FROM orders;
+    DELETE FROM customers;
+  `);
+
+  const insertCustomer = db.prepare(`
+    INSERT INTO customers (id, name, email, loyalty_tier, past_orders_count, past_refunds_count, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const c of seedCustomers) {
+    insertCustomer.run(c.id, c.name, c.email, c.loyalty_tier, c.past_orders_count, c.past_refunds_count, c.created_at);
+  }
+
+  const insertOrder = db.prepare(`
+    INSERT INTO orders (id, customer_id, total_amount, currency, status, order_date, shipping_address, scenario_description, expected_outcome)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertOrderItem = db.prepare(`
+    INSERT INTO order_items (id, order_id, product_name, sku, quantity, unit_price, is_final_sale, category)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 

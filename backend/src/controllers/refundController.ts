@@ -50,3 +50,36 @@ export function getPolicies(req: Request, res: Response) {
     data: STORE_POLICIES
   });
 }
+
+export async function getChatMessages(req: Request, res: Response) {
+  const orderId = req.query.orderId ? String(req.query.orderId) : '';
+  const customerId = req.query.customerId ? String(req.query.customerId) : undefined;
+
+  if (!orderId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required query parameter: orderId'
+    });
+  }
+
+  const { getChatHistory } = await import('../services/refundService.js');
+  const messages = getChatHistory(orderId, customerId);
+
+  return res.json({
+    success: true,
+    count: messages.length,
+    data: messages
+  });
+}
+
+export async function getRecentConversations(req: Request, res: Response) {
+  const limit = req.query.limit ? Number(req.query.limit) : 20;
+  const { getRecentChats } = await import('../services/refundService.js');
+  const conversations = getRecentChats(limit);
+
+  return res.json({
+    success: true,
+    count: conversations.length,
+    data: conversations
+  });
+}

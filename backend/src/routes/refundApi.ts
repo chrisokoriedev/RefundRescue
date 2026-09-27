@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getCustomers, getCustomerById, getOrderById } from '../controllers/customerController.js';
-import { evaluateRefund, clarifyRefund, getPolicies } from '../controllers/refundController.js';
-import { getMetrics, getTickets, getTicketById, overrideTicket } from '../controllers/adminController.js';
+import { evaluateRefund, clarifyRefund, getPolicies, getChatMessages, getRecentConversations } from '../controllers/refundController.js';
+import { getMetrics, getTickets, getTicketById, overrideTicket, resetDatabase } from '../controllers/adminController.js';
 import { asyncErrorWrapper } from '../middleware/errorHandler.js';
 import { idempotencyMiddleware } from '../middleware/idempotency.js';
 import { rateLimiter } from '../middleware/rateLimiter.js';
@@ -52,6 +52,10 @@ router.post('/refunds/chat',
 ); // alias: chat submissions use the same evaluation engine
 router.get('/policy/rules', getPolicies);
 
+// Chat history routes (persisted in SQLite)
+router.get('/chat/history', asyncErrorWrapper(getChatMessages));
+router.get('/chat/recent', asyncErrorWrapper(getRecentConversations));
+
 // Admin & Support routes
 router.get('/admin/metrics', asyncErrorWrapper(getMetrics));
 router.get('/admin/tickets', validateQuery(ticketsQuerySchema), asyncErrorWrapper(getTickets));
@@ -61,5 +65,6 @@ router.post('/admin/tickets/:id/override',
   validateBody(overrideTicketSchema),
   asyncErrorWrapper(overrideTicket)
 );
+router.post('/admin/reset-data', asyncErrorWrapper(resetDatabase));
 
 export default router;

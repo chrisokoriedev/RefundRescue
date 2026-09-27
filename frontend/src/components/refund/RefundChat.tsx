@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Customer, Order, RefundEvaluationResponse, submitRefundEvaluation, requestClarification } from '../../lib/refundApi';
-import { DecisionBadge } from './DecisionBadge';
-import { Send, Sparkles, AlertCircle, Bot, User, ShieldAlert, RefreshCw, ShieldCheck, Scale, Brain, Save, HelpCircle } from 'lucide-react';
+import { Customer, Order, RefundEvaluationResponse, submitRefundEvaluation, requestClarification, fetchChatHistory } from '../../lib/refundApi';
+import { Send, Sparkles, AlertCircle, Bot, User, RefreshCw, ShieldCheck, Scale, Brain, Save, HelpCircle, CheckCircle2, Clock, ExternalLink } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
   sender: 'customer' | 'ai';
   text: string;
+  decision?: 'APPROVED' | 'DENIED' | 'ESCALATED';
+  ticketId?: string;
   evaluation?: RefundEvaluationResponse;
   needsInfo?: boolean; // clarification question, not a final decision
   timestamp: string;
@@ -40,20 +41,64 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
   const msgCounter = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome-0',
-      sender: 'ai',
-      text: `Hello ${customer.name}! I am RevRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
-
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [clarificationCount, setClarificationCount] = useState(0);
+
+  // Load chat history from SQLite database on customer or order change
+  useEffect(() => {
+    let ignore = false;
+    async function loadHistory() {
+      try {
+        const history = await fetchChatHistory(order.id, customer.id);
+        if (ignore) return;
+        if (history && history.length > 0) {
+          setMessages(history.map(m => ({
+            id: m.id,
+            sender: m.sender,
+            text: m.text,
+            decision: (m.decision as 'APPROVED' | 'DENIED' | 'ESCALATED') || undefined,
+            ticketId: m.ticket_id || undefined,
+            timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          })));
+        } else {
+          setMessages([
+            {
+              id: `welcome-${order.id}`,
+              sender: 'ai',
+              text: `Hello ${customer.name}! I am RevRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+          ]);
+        }
+      } catch {
+        if (!ignore) {
+          setMessages([
+            {
+              id: `welcome-${order.id}`,
+              sender: 'ai',
+              text: `Hello ${customer.name}! I am RevRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+          ]);
+        }
+      }
+    }
+
+    loadHistory();
+    setError(null);
+    setInputMessage('');
+    setThinkingStep(0);
+    setClarificationCount(0);
+    setTimeout(() => inputRef.current?.focus(), 50);
+
+    return () => {
+      ignore = true;
+    };
+  }, [order.id, customer.id, customer.name]);
 
   const resetChat = React.useCallback(() => {
     msgCounter.current += 1;
@@ -89,11 +134,6 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
       el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     }
   }, [messages, isSubmitting, error]);
-
-  // Focus the input when a new order/customer is loaded
-  useEffect(() => {
-    resetChat();
-  }, [resetChat]);
 
   const suggestedPrompts = [
     'My cookware set arrived shattered with broken glass lids.',
@@ -157,11 +197,13 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
       });
 
       msgCounter.current += 1;
-      // Add AI response
+      // Add AI response with customer-friendly status
       const aiMsg: ChatMessage = {
         id: `ai-${msgCounter.current}`,
         sender: 'ai',
         text: evaluation.customerResponse,
+        decision: evaluation.decision,
+        ticketId: evaluation.ticketId,
         evaluation,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -172,13 +214,14 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
         onEvaluationComplete(evaluation);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error processing refund evaluation. Make sure backend is running on port 5000.';
+      const msg = err instanceof Error ? err.message : 'Error processing refund evaluation. Make sure backend is running on port 3001.';
       setError(msg);
     } finally {
       setIsSubmitting(false);
       setThinkingStep(0);
     }
   };
+
 
   return (
     <div className="bg-white rounded-xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col h-[680px]">
@@ -310,59 +353,51 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
                   )}
                   <p className="whitespace-pre-wrap">{msg.text}</p>
 
-                  {/* AI Structured Evaluation Card */}
-                  {msg.evaluation && (
-                    <div className="mt-3 pt-3 border-t border-slate-200/80 flex flex-col gap-2">
+                  {/* Clean, empathetic customer-facing status strip */}
+                  {!isUser && (msg.decision || msg.ticketId) && (
+                    <div className="mt-3 pt-2.5 border-t border-slate-200/70 flex flex-col gap-1.5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <DecisionBadge
-                          decision={msg.evaluation.decision}
-                          confidenceScore={msg.evaluation.confidenceScore}
-                          riskLevel={msg.evaluation.riskLevel}
-                          size="md"
-                        />
-                        <span className="text-[10px] font-mono text-slate-400 font-semibold">
-                          Ticket: {msg.evaluation.ticketId}
-                        </span>
+                        {msg.decision === 'APPROVED' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Refund Approved
+                          </span>
+                        )}
+                        {msg.decision === 'ESCALATED' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            Under Specialist Review
+                          </span>
+                        )}
+                        {msg.decision === 'DENIED' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold">
+                            <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
+                            Policy Notice
+                          </span>
+                        )}
+
+                        {msg.ticketId && (
+                          <span className="text-[10px] font-mono text-slate-400 font-medium">
+                            Ref: {msg.ticketId}
+                          </span>
+                        )}
                       </div>
 
-                      {/* Policy Badges */}
-                      {msg.evaluation.matchedPolicies.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-1">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase">Policies:</span>
-                          {msg.evaluation.matchedPolicies.map(code => (
-                            <span key={code} className="px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-blue-50 text-[#3861FB] border border-blue-100">
-                              {code}
-                            </span>
-                          ))}
+                      {/* Reviewer inspection link to open Admin Audit in /admin */}
+                      {msg.ticketId && (
+                        <div className="text-right">
+                          <a
+                            href="/admin#tickets"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-slate-400 hover:text-[#3861FB] transition-colors inline-flex items-center gap-1 font-medium"
+                            title="Open Support Dashboard to view internal AI audit trace"
+                          >
+                            <span>Support Audit View</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
                         </div>
                       )}
-
-                      {/* Prompt injection alert */}
-                      {msg.evaluation.promptInjectionDetected && (
-                        <div className="p-2 rounded-md bg-rose-50 border border-rose-200 text-[11px] text-rose-800 flex items-center gap-1.5 font-medium">
-                          <ShieldAlert className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
-                          <span>Adversarial prompt injection intercepted by Guardrail.</span>
-                        </div>
-                      )}
-
-                      {/* Private Admin Alert (Flagged for human reviewer) */}
-                      {msg.evaluation.adminAlert && (
-                        <div className="p-2 rounded-md bg-amber-50/90 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-1.5 font-medium">
-                          <span className="text-xs">🔒</span>
-                          <div>
-                            <span className="font-bold text-amber-950 block text-[10px] uppercase tracking-wider">Private Admin Alert Dispatched:</span>
-                            &ldquo;{msg.evaluation.adminAlert}&rdquo;
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Internal Reasoning for Support Audit */}
-                      <div className="p-2.5 rounded-md bg-white border border-slate-200/80 text-[11px] text-slate-600">
-                        <span className="font-bold text-slate-900 block mb-0.5 text-[9px] uppercase tracking-wider">
-                          AI Reasoning Trace ({msg.evaluation.engineUsed}):
-                        </span>
-                        {msg.evaluation.reasoningSummary.split('\n\n[Private Admin Alert]:')[0]}
-                      </div>
                     </div>
                   )}
                 </div>

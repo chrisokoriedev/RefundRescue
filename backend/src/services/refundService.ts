@@ -133,6 +133,36 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
 
   insertAudit.run(`AUD-${uuidv4().substring(0, 8).toUpperCase()}`, ticketId, 'AI_SYSTEM', 'AUTO_EVALUATE', auditNote, now);
 
+  // 9. Stage 7: Persist Dialogue to chat_messages Table
+  const insertChat = db.prepare(`
+    INSERT INTO chat_messages (id, ticket_id, order_id, customer_id, sender, text, decision, confidence_score, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertChat.run(
+    `MSG-${uuidv4().substring(0, 8).toUpperCase()}`,
+    ticketId,
+    order.id,
+    customer.id,
+    'customer',
+    request.message,
+    null,
+    null,
+    now
+  );
+
+  insertChat.run(
+    `MSG-${uuidv4().substring(0, 8).toUpperCase()}`,
+    ticketId,
+    order.id,
+    customer.id,
+    'ai',
+    aiResult.customerResponse,
+    finalDecision,
+    aiResult.confidenceScore,
+    new Date(Date.now() + 50).toISOString()
+  );
+
   return {
     ticketId,
     orderId: order.id,
@@ -150,4 +180,32 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
     adminAlert,
     createdAt: now
   };
+}
+
+export function getChatHistory(orderId: string, customerId?: string) {
+  const db = getDb();
+  let query = 'SELECT * FROM chat_messages WHERE order_id = ?';
+  const params: any[] = [orderId];
+  if (customerId) {
+    query += ' AND customer_id = ?';
+    params.push(customerId);
+  }
+  query += ' ORDER BY created_at ASC';
+  return db.prepare(query).all(...params);
+}
+
+export function getRecentChats(limit: number = 20) {
+  const db = getDb();
+  return db.prepare(`
+    SELECT m.order_id, m.customer_id, c.name as customer_name,
+           MAX(m.created_at) as last_activity,
+           COUNT(*) as message_count,
+           (SELECT text FROM chat_messages WHERE order_id = m.order_id ORDER BY created_at DESC LIMIT 1) as last_message,
+           (SELECT decision FROM chat_messages WHERE order_id = m.order_id AND decision IS NOT NULL ORDER BY created_at DESC LIMIT 1) as last_decision
+    FROM chat_messages m
+    JOIN customers c ON m.customer_id = c.id
+    GROUP BY m.order_id, m.customer_id, c.name
+    ORDER BY last_activity DESC
+    LIMIT ?
+  `).all(limit);
 }
