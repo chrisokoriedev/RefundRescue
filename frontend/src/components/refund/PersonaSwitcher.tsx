@@ -57,9 +57,9 @@ export function PersonaSwitcher({
   ];
 
   return (
-    <div className="bg-white/90 backdrop-blur-xs rounded-xl p-3 px-4 shadow-2xs border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+    <div className="bg-white/90 backdrop-blur-xs rounded-xl p-3 px-4 shadow-2xs border border-slate-200/80 flex flex-row flex-wrap items-center gap-3 text-xs">
       {/* Left: Simulation Label and Dropdown */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-none">
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-[#3861FB] border border-blue-100 font-bold text-[11px]">
           <Sparkles className="w-3.5 h-3.5" />
           <span>Try a sample customer</span>
@@ -89,8 +89,8 @@ export function PersonaSwitcher({
         </div>
       </div>
 
-      {/* Center/Right: Quick Presets */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+      {/* Center/Right: Quick Presets (wrap instead of horizontal scroll) */}
+      <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden lg:inline mr-1">
           Quick Tests:
         </span>
@@ -102,8 +102,7 @@ export function PersonaSwitcher({
               type="button"
               key={preset.id}
               onClick={() => onSelectCustomer(preset.id)}
-              title={preset.desc}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              title={preset.desc}                className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                 isSelected
                   ? 'bg-[#3861FB] text-white shadow-2xs font-bold'
                   : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/80 hover:text-slate-900'

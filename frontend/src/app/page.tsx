@@ -90,16 +90,8 @@ export default function CustomerPortalPage() {
 
       {selectedCustomer && activeOrder ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          <div className="lg:col-span-5" id="orders">
-            <OrderSelector
-              orders={selectedCustomer.orders || []}
-              selectedOrderId={selectedOrderId}
-              onSelectOrder={setSelectedOrderId}
-            />
-          </div>
-
-          <div className="lg:col-span-7 flex flex-col gap-3" id="chat">
-            {/* Sample-customer picker sits directly above the chat it controls */}
+          {/* Left column: sample-customer picker + order context, stacked */}
+          <div className="lg:col-span-5 flex flex-col gap-5" id="orders">
             <PersonaSwitcher
               customers={customers}
               selectedCustomerId={selectedCustomer?.id || 'CUST-101'}
@@ -107,6 +99,14 @@ export default function CustomerPortalPage() {
               isLoading={isLoading}
             />
 
+            <OrderSelector
+              orders={selectedCustomer.orders || []}
+              selectedOrderId={selectedOrderId}
+              onSelectOrder={setSelectedOrderId}
+            />
+          </div>
+
+          <div className="lg:col-span-7" id="chat">
             <RefundChat
               customer={selectedCustomer}
               order={activeOrder}
