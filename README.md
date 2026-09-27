@@ -69,12 +69,17 @@ Then access the services in your browser:
 **Prerequisites:** Node.js 20+ (supports built-in `node:sqlite`).
 
 ```bash
-# Terminal 1 — Backend (starts on port 3001)
+# Option 1: Run both services concurrently from the root directory
+npm install
+npm run dev
+
+# Option 2: Run each service in separate terminals
+# Terminal 1 — Backend (http://localhost:5000)
 cd backend
 npm install
 npm run dev
 
-# Terminal 2 — Frontend (starts on port 3000)
+# Terminal 2 — Frontend (http://localhost:3000)
 cd frontend
 npm install
 npm run dev
@@ -84,17 +89,25 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🔑 Environment Variables
+## 🔑 Environment Variables & API Key Setup
 
-Copy `.env.example` to `.env` in the root directory (or set them in your environment). **All variables are optional** — the application runs completely out-of-the-box in Heuristic Fallback mode without any third-party API keys.
+Copy `.env.example` to `.env` in the project root (or set variables directly in your environment). **All variables are completely optional** — if no Gemini API key is provided, the system gracefully falls back to **Heuristic Fallback mode**, allowing all customer flows, policy checks, chat interactions, and admin features to run end-to-end without errors.
+
+### Providing the Gemini API Key:
+- **With Docker Compose**: Add `GEMINI_API_KEY=your_key_here` to `.env` in the root directory, or run inline:
+  ```bash
+  GEMINI_API_KEY="your_api_key" docker-compose up --build
+  ```
+- **With Local Development**: Place `GEMINI_API_KEY=your_key_here` into `.env` in the root or `backend/.env`.
+- **Free Key Generation**: Obtain a free API key from [Google AI Studio](https://aistudio.google.com/apikey).
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `GEMINI_API_KEY` | No | *Empty* | Google Gemini API key ([Get one free](https://aistudio.google.com/apikey)). If omitted, runs in **Heuristic Fallback mode** with full deterministic logic and intent classification. |
-| `PORT` | No | `5000` (Docker) / `3001` (Dev) | Backend server port. |
-| `CORS_ORIGINS` | No | `http://localhost:3000` | Comma-separated allowed origins. |
-| `NEXT_PUBLIC_API_URL` | No | `http://localhost:3001` (Local) / `http://localhost:5000` (Docker) | Backend URL called by client browser. |
-| `SENTRY_DSN` | No | *Empty* | Optional Sentry error monitoring. |
+| `GEMINI_API_KEY` | No | *Empty* | Google Gemini API key. If omitted, runs in **Heuristic Fallback mode** with deterministic logic and sentiment scoring. |
+| `PORT` | No | `5000` | Backend API server listening port. |
+| `CORS_ORIGINS` | No | `http://localhost:3000` | Comma-separated allowed CORS origins. |
+| `NEXT_PUBLIC_API_URL` | No | `http://localhost:5000` | Backend API URL reachable by the client browser. |
+| `SENTRY_DSN` | No | *Empty* | Optional Sentry error monitoring DSN. |
 
 ---
 
@@ -113,7 +126,7 @@ Copy `.env.example` to `.env` in the root directory (or set them in your environ
                         ▼
 ┌───────────────────────────────────────────────┐
 │     Backend: Express (TypeScript / Node 20+)  │
-│     Port :5000 (Docker) / :3001 (Local Dev)   │
+│     Port :5000 (Docker & Local Dev)           │
 │                                               │
 │  [1] Guardrail Scanner (11 Attack Families)   │
 │                   ↓                           │
@@ -186,6 +199,65 @@ backend/src/
 
 ---
 
+## 🤖 How AI Integration Works
+
+RevRescue employs an enterprise-grade **hybrid AI architecture** combining **Google Gemini Flash** with deterministic code boundaries, ensuring intelligent conversational nuance without risking financial hallucination or policy non-compliance.
+
+### 1. Dual-Engine Architecture: Gemini Flash & Heuristic Fallback
+- **Google Gemini Flash (`@google/genai`)**: RevRescue connects directly to Gemini Flash using Google's official GenAI SDK. Flash was chosen specifically for its sub-second deliberation latency (<800ms), low operational cost, and native structured JSON schema enforcement.
+- **Zero-Config Heuristic Fallback Engine**: If no `GEMINI_API_KEY` is supplied, or during API network outages, the engine dynamically activates an internal rule-based heuristic evaluator (`geminiService.ts`). The fallback engine evaluates item condition, keyword sentiment, past customer refund ratios, and policy codes while adhering to the exact same response schema and confidence score metrics.
+
+### 2. Structured JSON Output & Deterministic Low Temperature
+- The deliberation model runs with `temperature: 0.2` to minimize non-deterministic hallucinations and maintain objective adherence to business rules.
+- The model's generation is strictly constrained using JSON schema output mode to return:
+  ```json
+  {
+    "decision": "APPROVED" | "DENIED" | "ESCALATED",
+    "confidenceScore": 0.95,
+    "reasoningSummary": "Internal rationale linking customer statement to policy rules...",
+    "customerResponse": "Empathetic, brand-aligned message communicated to the customer...",
+    "policyClauses": ["POL-004"],
+    "riskLevel": "LOW" | "MEDIUM" | "HIGH"
+  }
+  ```
+
+### 3. The 5-Stage Deliberation Pipeline
+Every incoming customer claim passes sequentially through five defensive stages:
+```
+[Inbound Claim]
+       │
+       ▼
+Stage 1: Pre-LLM Guardrail Scanner (11 Regex Attack Families)
+       │ ──> High-risk injection? → Escalated to supervisor immediately
+       ▼
+Stage 2: Deterministic Pre-Screen (POL-001..005 in TypeScript)
+       │ ──> Final-sale or >30 days? → Deterministic Hard Denial
+       ▼
+Stage 3: Gemini Flash Deliberation (Contextual evaluation + Sentiment)
+       │ ──> Evaluates damage plausibility, ambiguity, customer history
+       ▼
+Stage 4: Post-Deliberation Hard Gate Invariants
+       │ ──> Code gate verifies AI decision cannot violate policies
+       ▼
+Stage 5: SQLite Tamper-Evident Audit Logging (DatabaseSync)
+```
+
+### 4. Multi-Turn Interactive Clarification
+When a customer sends a vague or greeting message (e.g. *"Hello"*, *"I have an issue with my package"*), RevRescue initiates a clarification turn (`/api/chat/clarify`):
+- Rather than prematurely denying or approving an ambiguous claim, the engine prompts the shopper with specific follow-up questions (e.g. *"Could you describe what happened to the item?"*).
+- This mirrors real-world customer support, reduces unnecessary ticket escalation costs, and gathers missing claim evidence before invoking formal policy deliberation.
+
+### 5. Dual-Layer Prompt Injection Defense
+- **Pre-LLM Scanner**: Evaluates inbound text against 11 attack patterns (instruction overriding, role switching, system spoofing, delimiter manipulation, and prompt extraction).
+- **Post-Deliberation Invariants**: Even if an adversarial prompt escapes detection and tricks the LLM into returning `"decision": "APPROVED"`, the backend hard-gate code checks deterministic invariants (e.g. `order.order_date > 30 days` or `item.is_final_sale == 1`) and overrides the decision to `DENIED` before any database commit or response dispatch.
+
+### 6. Live Human-in-the-Loop Takeover & Supervisor Override
+- Supervisors can monitor conversation streams in real time via the Admin Dashboard.
+- Support agents can click **"Take Over Chat"** to pause automated AI responses, connect live with the customer, send canned or custom responses, and hand control back to the AI once the issue is resolved.
+- Supervisors can manually override decisions (`APPROVED` ↔ `DENIED` ↔ `ESCALATED`) with audit notes, which immediately broadcasts an update to the customer portal.
+
+---
+
 ## 🧪 Seed Personas & Test Scenarios
 
 The database initializes with 15 realistic customer profiles designed to exercise every policy branch:
@@ -216,6 +288,20 @@ The database initializes with 15 realistic customer profiles designed to exercis
 
 ---
 
+## ⚖️ Key Assumptions & Trade-offs
+
+During the design and implementation of RevRescue, several deliberate architectural decisions and trade-offs were made:
+
+| Architectural Area | Decision Made | Rationale / Assumption | Trade-off / Considerations |
+|--------------------|---------------|------------------------|----------------------------|
+| **Database** | Embedded SQLite (`DatabaseSync` via Node 20+) | Reviewers must be able to launch the full stack with zero external cloud dependencies or complex database container setup (`docker-compose up`). SQLite provides instant startup, zero-latency queries, and strict relational integrity (foreign keys + ACID transactions). | Multi-instance horizontal scaling would require migrating to an external distributed database such as PostgreSQL or Google Cloud Spanner. |
+| **Deliberation Control** | Hybrid 5-Stage Pipeline vs. Pure Autonomous LLM | Financial transactions (refunds/chargebacks) cannot be entrusted entirely to autonomous LLMs due to hallucination risks and vulnerability to prompt injection. Code-level gates enforce absolute policy boundaries. | Constrains LLM flexibility; policy rules cannot be bent by the AI, even for creative edge cases, unless a human supervisor intervenes. |
+| **Real-Time Synchronization** | Reactive HTTP Polling (2.5s) vs. WebSockets | Testing environments and containerized setups often suffer from proxy, reverse proxy, or firewall issues with WebSocket handshakes. Lightweight polling guarantees 100% reliable message synchronization and effortless reconnects across container reboots. | Introduces a ~2-second delay before supervisor messages or takeover states reflect in the customer portal, compared to sub-second WebSocket delivery. |
+| **AI Availability** | Dual-Mode (Gemini Flash + Zero-Config Fallback) | Evaluators may run the project without a Gemini API key or behind restricted corporate networks. The system must run end-to-end without requiring third-party credentials. | Fallback mode uses heuristic intent classification and keyword scoring instead of generative deep semantic reasoning, though all policy and audit flows remain identical. |
+| **UI Workspace Layout** | Viewport-Locked Glassmorphism (Zero-Page-Scroll) | Desktop support agents and shoppers benefit from an ergonomic, viewport-contained workspace (similar to Linear or Apple Messages) where order feeds and chat threads scroll independently without page jumps. | Requires rigid viewport CSS styling (`h-screen overflow-hidden`) and custom scroll containers rather than conventional full-page document scrolling. |
+
+---
+
 ## 🧪 Testing
 
 The repository includes a comprehensive automated test suite covering all critical paths:
@@ -240,6 +326,34 @@ Time:        3.33 s
 - `tests/db.test.ts` — SQLite relational integrity, foreign keys, and seed validation.
 - `tests/resilience.test.ts` — Graceful degradation, error wrappers, and fallbacks.
 - `tests/gracefulShutdown.test.ts` — Process signal handling and clean database closure.
+
+---
+
+## 📹 Video Demo Walkthrough Guide
+
+To fulfill the submission requirement for a short video demo walkthrough, follow this concise ~3-minute recording checklist:
+
+1. **Running Locally (30s)**:
+   - Show the terminal launching the application via `docker-compose up` (or `npm run dev`).
+   - Open browser to `http://localhost:3000` (Customer Portal) and `http://localhost:3000/admin` (Admin Dashboard).
+
+2. **Customer Refund Request Flow (60s)**:
+   - Select an order (e.g. Sarah Jenkins `ORD-901` for cookware damage).
+   - Enter a refund claim (or click one of the interactive scenario pills).
+   - Demonstrate the AI evaluation stream, confidence scoring, and automated approval (`POL-004`).
+   - Test a denial scenario (e.g. clearance final sale `ORD-903` or expired 30-day window `ORD-902`).
+   - Optional: Enter a greeting or vague message (e.g. *"hello"*) to demonstrate multi-turn clarification.
+
+3. **Admin / Support Dashboard (60s)**:
+   - Navigate to `http://localhost:3000/admin`.
+   - Highlight the live KPI metric cards (Total Claims, Approval Rate, Refunded Dollars, Blocked Injections, Overrides).
+   - Filter tickets by status (`APPROVED`, `DENIED`, `ESCALATED`) or search by customer name.
+   - Click a ticket to open the **Audit Drawer** and show the full reasoning trace, confidence scores, and matched policy clauses.
+   - Demonstrate **Live Human Takeover**: Click *"Take Over Chat"*, send a specialist reply, and show the live specialist banner in the customer portal.
+   - Demonstrate **Supervisor Override**: Change a decision with notes and show the audit trail update.
+
+4. **Architecture & AI Integration Summary (30s)**:
+   - Briefly explain the hybrid 5-stage pipeline: Pre-LLM Guardrail Scanner → Deterministic Policy Pre-Screen → Gemini Flash Deliberation → Post-Deliberation Hard Gate → SQLite Audit Logging.
 
 ---
 
