@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Customer, Order, RefundEvaluationResponse, submitRefundEvaluation, requestClarification, fetchChatHistory } from '../../lib/refundApi';
-import { Send, Sparkles, AlertCircle, Bot, User, RefreshCw, ShieldCheck, Scale, Brain, Save, HelpCircle, CheckCircle2, Clock, ExternalLink, Headset } from 'lucide-react';
+import { Send, Sparkles, AlertCircle, Bot, User, RefreshCw, ShieldCheck, Scale, Brain, Save, HelpCircle, CheckCircle2, Clock, ExternalLink, Headset, ChevronDown } from 'lucide-react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 interface ChatMessage {
@@ -51,6 +51,24 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
   const [thinkingStep, setThinkingStep] = useState(0);
   const [clarificationCount, setClarificationCount] = useState(0);
   const [chatBodyRef] = useAutoAnimate<HTMLDivElement>();
+
+  // Scroll collapse state: fuses pipeline strip & interactive test scenarios to top when scrolling down
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [manualShowPrompts, setManualShowPrompts] = useState<boolean | null>(null);
+
+  const handleChatScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const top = e.currentTarget.scrollTop;
+    if (top > 25) {
+      if (!isScrolled) setIsScrolled(true);
+    } else {
+      if (isScrolled) {
+        setIsScrolled(false);
+        setManualShowPrompts(null);
+      }
+    }
+  };
+
+  const shouldCollapse = manualShowPrompts !== null ? !manualShowPrompts : isScrolled;
 
   // Load chat history from SQLite database on customer or order change
   useEffect(() => {
@@ -156,6 +174,8 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
     setInputMessage('');
     setThinkingStep(0);
     setClarificationCount(0);
+    setIsScrolled(false);
+    setManualShowPrompts(null);
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [customer.name, order.id]);
 
@@ -296,20 +316,20 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
       {/* Top Fixed Area: Header, Live Banner, Pipeline, and 3 Quick Suggestions */}
       <div className="flex-shrink-0">
         {/* Chat Header */}
-        <div className="flex items-center justify-between border-b border-slate-200/60 pb-3 mb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE] flex items-center justify-center shadow-2xs">
-              {hasAgentJoined ? <Headset className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+        <div className={`flex items-center justify-between border-b border-slate-200/60 transition-all duration-300 ${shouldCollapse ? 'pb-2 mb-2' : 'pb-3 mb-3'}`}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className={`rounded-2xl bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE] flex items-center justify-center shadow-2xs transition-all duration-300 flex-shrink-0 ${shouldCollapse ? 'w-7.5 h-7.5' : 'w-9 h-9'}`}>
+              {hasAgentJoined ? <Headset className={shouldCollapse ? 'w-3.5 h-3.5' : 'w-4 h-4'} /> : <Bot className={shouldCollapse ? 'w-3.5 h-3.5' : 'w-4 h-4'} />}
             </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-[#0F172A] flex items-center gap-2">
-                <span>{hasAgentJoined ? 'Human Specialist Takeover' : 'AI Support Agent'}</span>
-                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] font-bold shadow-2xs flex items-center gap-1">
+            <div className="min-w-0">
+              <h3 className={`font-bold text-[#0F172A] flex items-center gap-2 transition-all ${shouldCollapse ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>
+                <span className="truncate">{hasAgentJoined ? 'Human Specialist Takeover' : 'AI Support Agent'}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] font-bold shadow-2xs flex items-center gap-1 flex-shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse" />
                   {hasAgentJoined ? 'Specialist Live' : 'Active Review'}
                 </span>
               </h3>
-              <p className="text-[11px] text-slate-500 font-medium">
+              <p className={`text-[11px] text-slate-500 font-medium truncate transition-all ${shouldCollapse ? 'hidden sm:block max-w-[320px]' : 'block'}`}>
                 {hasAgentJoined
                   ? 'A human support specialist is currently managing this conversation directly'
                   : isSubmitting
@@ -319,104 +339,136 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={resetChat}
-            title="Reset Conversation"
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white/80 rounded-xl transition-colors text-xs flex items-center gap-1 cursor-pointer font-bold shadow-2xs"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Reset</span>
-          </button>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Quick Prompts Peek/Toggle Pill when collapsed */}
+            <button
+              type="button"
+              onClick={() => setManualShowPrompts(prev => prev === true ? false : true)}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                shouldCollapse
+                  ? 'bg-[#F5F3FF] hover:bg-[#EDE9FE] text-[#7C3AED] border border-[#DDD6FE]'
+                  : 'bg-white/70 hover:bg-white text-slate-600 border border-slate-200'
+              }`}
+              title={shouldCollapse ? 'Show test scenarios & pipeline' : 'Minimize test scenarios'}
+            >
+              <Sparkles className="w-3 h-3 text-[#7C3AED]" />
+              <span className="hidden sm:inline">{shouldCollapse ? 'Test Prompts' : 'Hide Prompts'}</span>
+              <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${shouldCollapse ? '' : 'rotate-180'}`} />
+            </button>
+
+            <button
+              type="button"
+              onClick={resetChat}
+              title="Reset Conversation"
+              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white/80 rounded-xl transition-colors text-xs flex items-center gap-1 cursor-pointer font-bold shadow-2xs"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+          </div>
         </div>
 
         {/* Live Human Specialist Banner if an agent has taken over */}
         {hasAgentJoined && (
-          <div className="mb-2.5 p-2.5 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] text-xs flex items-center justify-between shadow-2xs animate-in fade-in duration-300">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
+          <div className={`rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] text-xs flex items-center justify-between shadow-2xs animate-in fade-in duration-300 transition-all ${shouldCollapse ? 'py-1.5 px-2.5 mb-1.5' : 'py-2.5 px-2.5 mb-2.5'}`}>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="relative flex h-2 w-2 flex-shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="font-bold text-slate-900 text-[11px]">Live Support Specialist Connected:</span>
-              <span className="text-slate-700 text-[11px]">A human specialist is reviewing and chatting with you directly.</span>
+              <span className="font-bold text-slate-900 text-[11px] flex-shrink-0">Live Support Specialist Connected:</span>
+              <span className="text-slate-700 text-[11px] truncate">A human specialist is reviewing and chatting with you directly.</span>
             </div>
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+            <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300 flex-shrink-0 ml-1">
               HUMAN TAKEOVER
             </span>
           </div>
         )}
 
-        {/* Decision Pipeline Strip — lights up stage by stage while the AI works */}
+        {/* Collapsible Section: Decision Pipeline Strip & Interactive Test Scenarios
+            Fuses smoothly to top when user scrolls down to maximize message real estate */}
         <div
-          className={`mb-2.5 rounded-xl border px-3.5 py-2 flex items-center justify-between gap-1 transition-colors duration-300 ${
-            isSubmitting ? 'bg-purple-50/70 border-purple-200' : 'bg-white/60 border-white/80 shadow-2xs backdrop-blur-md'
+          className={`transition-all duration-300 ease-in-out overflow-hidden flex flex-col ${
+            shouldCollapse
+              ? 'max-h-0 opacity-0 -translate-y-2 pointer-events-none scale-98 mb-0'
+              : 'max-h-[350px] opacity-100 translate-y-0 scale-100 mb-2'
           }`}
-          aria-label="How your refund decision is made"
         >
-          {PIPELINE_STAGES.map((stage, i) => {
-            const Icon = stage.icon;
-            const isActive = isSubmitting && thinkingStep === i;
-            const isDone = (!isSubmitting && messages.some(m => m.evaluation)) || (isSubmitting && thinkingStep > i);
+          {/* Decision Pipeline Strip — lights up stage by stage while the AI works */}
+          <div
+            className={`mb-2.5 rounded-xl border px-3.5 py-2 flex items-center justify-between gap-1 transition-colors duration-300 ${
+              isSubmitting ? 'bg-purple-50/70 border-purple-200' : 'bg-white/60 border-white/80 shadow-2xs backdrop-blur-md'
+            }`}
+            aria-label="How your refund decision is made"
+          >
+            {PIPELINE_STAGES.map((stage, i) => {
+              const Icon = stage.icon;
+              const isActive = isSubmitting && thinkingStep === i;
+              const isDone = (!isSubmitting && messages.some(m => m.evaluation)) || (isSubmitting && thinkingStep > i);
 
-            return (
-              <React.Fragment key={stage.label}>
-                {i > 0 && (
+              return (
+                <React.Fragment key={stage.label}>
+                  {i > 0 && (
+                    <div
+                      className={`flex-1 h-0.5 min-w-2 transition-colors duration-300 ${
+                        isDone ? 'bg-emerald-400' : 'bg-slate-200/80'
+                      }`}
+                    />
+                  )}
                   <div
-                    className={`flex-1 h-0.5 min-w-2 transition-colors duration-300 ${
-                      isDone ? 'bg-emerald-400' : 'bg-slate-200/80'
+                    className={`flex items-center gap-1 px-1 transition-all duration-300 ${
+                      isActive
+                        ? 'text-[#7C3AED] scale-105'
+                        : isDone
+                          ? 'text-emerald-700'
+                          : 'text-slate-400'
                     }`}
-                  />
-                )}
-                <div
-                  className={`flex items-center gap-1 px-1 transition-all duration-300 ${
-                    isActive
-                      ? 'text-[#7C3AED] scale-105'
-                      : isDone
-                        ? 'text-emerald-700'
-                        : 'text-slate-400'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'animate-pulse' : ''}`} />
-                  <span
-                    className={`text-[10px] whitespace-nowrap ${
-                      isActive ? 'font-black' : isDone ? 'font-bold' : 'font-medium'
-                    } ${isActive || isDone ? '' : 'hidden sm:inline'}
-                    `}
                   >
-                    {stage.label}
-                  </span>
-                </div>
-              </React.Fragment>
-            );
-          })}
-        </div>
+                    <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'animate-pulse' : ''}`} />
+                    <span
+                      className={`text-[10px] whitespace-nowrap ${
+                        isActive ? 'font-black' : isDone ? 'font-bold' : 'font-medium'
+                      } ${isActive || isDone ? '' : 'hidden sm:inline'}
+                      `}
+                    >
+                      {stage.label}
+                    </span>
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
 
-        {/* Suggested Prompt Chips: Exactly 3 prompts with prominent rounded glass styling */}
-        <div className="mb-2">
-          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block mb-1.5 flex items-center gap-1.5">
-            <Sparkles className="w-3 h-3 text-[#7C3AED]" />
-            <span>Interactive Test Scenarios (Click to test):</span>
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {suggestedPrompts.map((prompt, i) => (
-              <button
-                type="button"
-                key={i}
-                onClick={() => handleSend(prompt)}
-                disabled={isSubmitting}
-                className="group relative flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 hover:bg-white text-slate-800 hover:text-[#7C3AED] border-2 border-slate-200/90 hover:border-[#DDD6FE] shadow-2xs hover:shadow-xs backdrop-blur-md transition-all text-[11px] font-semibold cursor-pointer active:scale-95 text-left"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] group-hover:scale-125 transition-transform flex-shrink-0" />
-                <span className="truncate max-w-[240px] sm:max-w-[320px]">&quot;{prompt}&quot;</span>
-              </button>
-            ))}
+          {/* Suggested Prompt Chips: Exactly 3 prompts with prominent rounded glass styling */}
+          <div>
+            <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block mb-1.5 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-[#7C3AED]" />
+              <span>Interactive Test Scenarios (Click to test):</span>
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {suggestedPrompts.map((prompt, i) => (
+                <button
+                  type="button"
+                  key={i}
+                  onClick={() => handleSend(prompt)}
+                  disabled={isSubmitting}
+                  className="group relative flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 hover:bg-white text-slate-800 hover:text-[#7C3AED] border-2 border-slate-200/90 hover:border-[#DDD6FE] shadow-2xs hover:shadow-xs backdrop-blur-md transition-all text-[11px] font-semibold cursor-pointer active:scale-95 text-left"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] group-hover:scale-125 transition-transform flex-shrink-0" />
+                  <span className="truncate max-w-[240px] sm:max-w-[320px]">&quot;{prompt}&quot;</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Middle Chat Messages Stream — Pinned inside floating card, smooth scroll */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto pr-1.5 custom-scrollbar space-y-3.5 my-2">
+      <div
+        ref={scrollRef}
+        onScroll={handleChatScroll}
+        className="flex-1 min-h-0 overflow-y-auto pr-1.5 custom-scrollbar space-y-3.5 my-2"
+      >
         <div ref={chatBodyRef} className="space-y-3.5">
           {messages.map((msg) => {
             const isUser = msg.sender === 'customer';
