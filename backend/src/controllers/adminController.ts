@@ -239,7 +239,8 @@ export async function createSimulatedTicket(req: Request, res: Response) {
       productId,
       reason,
       requestedAmount,
-      orderAgeDays = 5
+      orderAgeDays = 5,
+      mode = 'evaluate'
     } = req.body;
 
     const { getProductById } = await import('../services/productCatalog.js');
@@ -304,7 +305,84 @@ export async function createSimulatedTicket(req: Request, res: Response) {
       product.category
     );
 
-    // 4. Run the full evaluation pipeline
+    // If chat mode: create initial ticket in ESCALATED review state so user can test in live chat
+    if (mode === 'chat') {
+      const ticketId = `TICK-${uuidv4().substring(0, 8).toUpperCase()}`;
+      const now = new Date().toISOString();
+
+      db.prepare(`
+        INSERT INTO refund_tickets (
+          id, order_id, customer_id, requested_amount, reason, decision,
+          confidence_score, customer_response, reasoning_summary, risk_level,
+          prompt_injection_detected, policy_clauses, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        ticketId,
+        orderId,
+        customer.id,
+        finalAmount,
+        reason,
+        'ESCALATED',
+        0.5,
+        'Ticket created. Ready for conversational claim evaluation in customer chat.',
+        'Ticket initialized for interactive customer portal testing. Ready for chat deliberation.',
+        'LOW',
+        0,
+        JSON.stringify([]),
+        now,
+        now
+      );
+
+      const auditId = `AUD-${uuidv4().substring(0, 8).toUpperCase()}`;
+      db.prepare(`
+        INSERT INTO audit_logs (id, ticket_id, actor, action, notes, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        auditId,
+        ticketId,
+        'HUMAN_SUPERVISOR',
+        'MANUAL_ESCALATE',
+        'Ticket created for live chat testing in customer portal.',
+        now
+      );
+
+      const ticket = db.prepare(`
+        SELECT t.*, c.name as customer_name, c.loyalty_tier, o.total_amount as order_total
+        FROM refund_tickets t
+        JOIN customers c ON t.customer_id = c.id
+        JOIN orders o ON t.order_id = o.id
+        WHERE t.id = ?
+      `).get(ticketId) as any;
+
+      if (ticket && ticket.policy_clauses) {
+        try {
+          ticket.policy_clauses = JSON.parse(ticket.policy_clauses);
+        } catch {
+          // ignore
+        }
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Ticket created for chat testing',
+        data: {
+          mode: 'chat',
+          ticket,
+          customer,
+          order: {
+            id: orderId,
+            customer_id: customer.id,
+            total_amount: finalAmount,
+            order_date: orderDate,
+            product_name: product.name,
+            sku: product.sku
+          },
+          reason
+        }
+      });
+    }
+
+    // 4. Run the full evaluation pipeline (evaluate mode)
     const evaluation = await evaluateRefundRequest({
       customerId: customer.id,
       orderId,
@@ -333,6 +411,7 @@ export async function createSimulatedTicket(req: Request, res: Response) {
       success: true,
       message: 'Ticket created and evaluated successfully',
       data: {
+        mode: 'evaluate',
         ticket: ticket || evaluation,
         evaluation,
         customer,
@@ -343,7 +422,8 @@ export async function createSimulatedTicket(req: Request, res: Response) {
           order_date: orderDate,
           product_name: product.name,
           sku: product.sku
-        }
+        },
+        reason
       }
     });
   } catch (error: any) {

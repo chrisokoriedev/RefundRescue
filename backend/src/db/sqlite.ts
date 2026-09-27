@@ -143,6 +143,176 @@ export function seedDatabase(): void {
       insertOrderItem.run(item.id, item.order_id, item.product_name, item.sku, item.quantity, item.unit_price, item.is_final_sale, item.category);
     }
   }
+
+  seedBaselineTickets(db);
+}
+
+export function seedBaselineTickets(db: DatabaseSync): void {
+  const countRow = db.prepare('SELECT count(*) as count FROM refund_tickets').get() as { count: number };
+  if (countRow && countRow.count > 0) return;
+
+  const now = new Date().toISOString();
+  const insertTicket = db.prepare(`
+    INSERT INTO refund_tickets (
+      id, order_id, customer_id, requested_amount, reason, decision,
+      confidence_score, customer_response, reasoning_summary, risk_level,
+      prompt_injection_detected, policy_clauses, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertAudit = db.prepare(`
+    INSERT INTO audit_logs (id, ticket_id, actor, action, notes, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertChat = db.prepare(`
+    INSERT INTO chat_messages (id, ticket_id, order_id, customer_id, sender, text, decision, confidence_score, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  // Baseline Ticket 1: Approved Damaged Cookware Set
+  insertTicket.run(
+    'TICK-901-APP',
+    'ORD-901',
+    'CUST-101',
+    180.00,
+    'Cookware set arrived with shattered lids and chipped ceramic during shipping.',
+    'APPROVED',
+    0.98,
+    'Hi Sarah, thank you for reaching out to us. We apologize for the damaged cookware set. Under our Damaged Goods Policy (POL-004), we have approved your full refund of $180.00 for order #ORD-901.',
+    'Order ORD-901 delivered 5 days ago. Shattered lid falls under POL-004 (Damaged Goods within 30 days, amount <= $500). Customer has clean history with 8 orders. Approved.',
+    'LOW',
+    0,
+    JSON.stringify(['POL-004']),
+    now,
+    now
+  );
+  insertAudit.run(
+    'AUD-001',
+    'TICK-901-APP',
+    'AI_SYSTEM',
+    'AUTO_EVALUATE',
+    'Automated approval under policy POL-004: Damaged in transit within 30 days window.',
+    now
+  );
+  insertChat.run(
+    'MSG-001-CUST',
+    'TICK-901-APP',
+    'ORD-901',
+    'CUST-101',
+    'customer',
+    'Cookware set arrived with shattered lids and chipped ceramic during shipping.',
+    null,
+    null,
+    now
+  );
+  insertChat.run(
+    'MSG-001-AI',
+    'TICK-901-APP',
+    'ORD-901',
+    'CUST-101',
+    'ai',
+    'Hi Sarah, thank you for reaching out to us. We apologize for the damaged cookware set. Under our Damaged Goods Policy (POL-004), we have approved your full refund of $180.00 for order #ORD-901.',
+    'APPROVED',
+    0.98,
+    now
+  );
+
+  // Baseline Ticket 2: Escalated High-Value OLED TV
+  insertTicket.run(
+    'TICK-904-ESC',
+    'ORD-904',
+    'CUST-104',
+    850.00,
+    'TV display arrived with a cracked screen ($850 > $500 threshold).',
+    'ESCALATED',
+    0.74,
+    'Hello David, thank you for reaching out regarding your OLED TV. Because your order total exceeds our automated threshold of $500, we have routed your claim directly to a support specialist for manual review.',
+    'Claim amount $850.00 exceeds $500 threshold under POL-003. Flagged for supervisor review.\n\n[Private Admin Alert]: "I\'m not confident about this high-value asset claim without visual serial check. Please review."',
+    'MEDIUM',
+    0,
+    JSON.stringify(['POL-003']),
+    now,
+    now
+  );
+  insertAudit.run(
+    'AUD-002',
+    'TICK-904-ESC',
+    'AI_SYSTEM',
+    'AUTO_EVALUATE',
+    'Automated escalation under policy POL-003: Exceeds $500 threshold. Dispatched private alert to supervisor.',
+    now
+  );
+  insertChat.run(
+    'MSG-002-CUST',
+    'TICK-904-ESC',
+    'ORD-904',
+    'CUST-104',
+    'customer',
+    'TV display arrived with a cracked screen ($850 > $500 threshold).',
+    null,
+    null,
+    now
+  );
+  insertChat.run(
+    'MSG-002-AI',
+    'TICK-904-ESC',
+    'ORD-904',
+    'CUST-104',
+    'ai',
+    'Hello David, thank you for reaching out regarding your OLED TV. Because your order total exceeds our automated threshold of $500, we have routed your claim directly to a support specialist for manual review.',
+    'ESCALATED',
+    0.74,
+    now
+  );
+
+  // Baseline Ticket 3: Denied Final Sale Scarf
+  insertTicket.run(
+    'TICK-903-DEN',
+    'ORD-903',
+    'CUST-103',
+    95.00,
+    'Customer wants to return clearance cashmere scarf because the shade of red did not match their jacket.',
+    'DENIED',
+    0.99,
+    'Hello Elena, thank you for contacting RevRescue. We reviewed your claim for order #ORD-903. As stated during checkout and under store policy POL-001, clearance and final-sale merchandise cannot be refunded.',
+    'Item SKU APP-SCARF-FS is explicitly marked as final sale (is_final_sale=1). POL-001 strictly disallows refunds for clearance merchandise.',
+    'LOW',
+    0,
+    JSON.stringify(['POL-001']),
+    now,
+    now
+  );
+  insertAudit.run(
+    'AUD-003',
+    'TICK-903-DEN',
+    'AI_SYSTEM',
+    'AUTO_EVALUATE',
+    'Automated rejection under policy POL-001: Item is marked as Final Sale.',
+    now
+  );
+  insertChat.run(
+    'MSG-003-CUST',
+    'TICK-903-DEN',
+    'ORD-903',
+    'CUST-103',
+    'customer',
+    'Customer wants to return clearance cashmere scarf because the shade of red did not match their jacket.',
+    null,
+    null,
+    now
+  );
+  insertChat.run(
+    'MSG-003-AI',
+    'TICK-903-DEN',
+    'ORD-903',
+    'CUST-103',
+    'ai',
+    'Hello Elena, thank you for contacting RevRescue. We reviewed your claim for order #ORD-903. As stated during checkout and under store policy POL-001, clearance and final-sale merchandise cannot be refunded.',
+    'DENIED',
+    0.99,
+    now
+  );
 }
 
 export function resetAndSeedDatabase(): void {
@@ -181,4 +351,6 @@ export function resetAndSeedDatabase(): void {
       insertOrderItem.run(item.id, item.order_id, item.product_name, item.sku, item.quantity, item.unit_price, item.is_final_sale, item.category);
     }
   }
+
+  seedBaselineTickets(db);
 }

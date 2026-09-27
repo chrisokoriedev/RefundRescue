@@ -47,12 +47,13 @@ export const ticketsQuerySchema = z.object({
 
 export const createTicketSchema = z.object({
   customerName: z.string().min(1, 'customerName is required').max(100),
-  customerEmail: z.string().email().optional(),
+  customerEmail: z.string().email().optional().or(z.literal('')),
   loyaltyTier: z.enum(['Bronze', 'Silver', 'Gold', 'Platinum']).optional().default('Silver'),
   productId: z.string().min(1, 'productId is required'),
   reason: z.string().min(1, 'reason is required').max(5000),
   requestedAmount: z.number().positive().max(1_000_000).optional(),
-  orderAgeDays: z.coerce.number().int().min(0).max(365).optional().default(5)
+  orderAgeDays: z.coerce.number().int().min(0).max(365).optional().default(5),
+  mode: z.enum(['chat', 'evaluate']).optional().default('evaluate')
 });
 
 // ── 422 response builder (consistent error envelope) ──

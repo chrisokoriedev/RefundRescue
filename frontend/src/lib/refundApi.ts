@@ -288,17 +288,22 @@ export interface CreateTicketPayload {
   reason: string;
   requestedAmount?: number;
   orderAgeDays?: number;
+  mode?: 'chat' | 'evaluate';
+}
+
+export interface CreateTicketResponseData {
+  mode: 'chat' | 'evaluate';
+  ticket: RefundTicket;
+  evaluation?: RefundEvaluationResponse;
+  customer: Customer;
+  order: Order;
+  reason?: string;
 }
 
 export async function createSimulatedTicket(payload: CreateTicketPayload): Promise<{
   success: boolean;
   message: string;
-  data: {
-    ticket: RefundTicket;
-    evaluation: RefundEvaluationResponse;
-    customer: Customer;
-    order: Order;
-  };
+  data: CreateTicketResponseData;
 }> {
   const res = await fetch(`${API_BASE}/api/tickets/create`, {
     method: 'POST',

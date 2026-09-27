@@ -13,15 +13,19 @@ export default function CustomerPortalPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  const [initialClaimText, setInitialClaimText] = useState<string>('');
+  const [autoSendClaim, setAutoSendClaim] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
 
-  const selectCustomer = React.useCallback(async (id: string) => {
+  const selectCustomer = React.useCallback(async (id: string, defaultOrderId?: string) => {
     try {
       const fullCustomer = await fetchCustomerById(id);
       setSelectedCustomer(fullCustomer);
-      if (fullCustomer.orders && fullCustomer.orders.length > 0) {
+      if (defaultOrderId && fullCustomer.orders?.some(o => o.id === defaultOrderId)) {
+        setSelectedOrderId(defaultOrderId);
+      } else if (fullCustomer.orders && fullCustomer.orders.length > 0) {
         setSelectedOrderId(fullCustomer.orders[0].id);
       }
     } catch (err: unknown) {
@@ -36,7 +40,29 @@ export default function CustomerPortalPage() {
       const data = await fetchCustomers();
       setCustomers(data);
       if (data.length > 0) {
-        await selectCustomer(data[0].id);
+        let targetCustomerId = data[0].id;
+        let targetOrderId: string | undefined = undefined;
+
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const urlCustId = params.get('customerId');
+          const urlOrderId = params.get('orderId');
+          const urlClaim = params.get('claimText');
+          const urlAuto = params.get('autoSend');
+
+          if (urlCustId && data.some(c => c.id === urlCustId)) {
+            targetCustomerId = urlCustId;
+          }
+          if (urlOrderId) {
+            targetOrderId = urlOrderId;
+          }
+          if (urlClaim) {
+            setInitialClaimText(urlClaim);
+            setAutoSendClaim(urlAuto === '1' || urlAuto === 'true');
+          }
+        }
+
+        await selectCustomer(targetCustomerId, targetOrderId);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to connect to backend. Please start the backend.';
@@ -59,7 +85,7 @@ export default function CustomerPortalPage() {
     <button
       type="button"
       onClick={() => setIsCreateOpen(true)}
-      className="px-3.5 py-1.5 rounded-lg bg-[#3861FB] hover:bg-[#2E52E0] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+      className="px-4 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-black shadow-xs flex items-center gap-2 transition-all cursor-pointer active:scale-95"
     >
       <Plus className="w-3.5 h-3.5" />
       <span>Create Ticket / Claim</span>
@@ -121,6 +147,8 @@ export default function CustomerPortalPage() {
             <RefundChat
               customer={selectedCustomer}
               order={activeOrder}
+              initialPrompt={initialClaimText}
+              autoSendPrompt={autoSendClaim}
               onEvaluationComplete={() => {
                 // optionally notify
               }}
@@ -139,8 +167,23 @@ export default function CustomerPortalPage() {
       <CreateTicketModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        onSuccess={() => {
-          loadCustomers();
+        onSuccess={async (ticketId, data) => {
+          if (data?.customerId) {
+            try {
+              const fresh = await fetchCustomers();
+              setCustomers(fresh);
+              await selectCustomer(data.customerId, data.orderId);
+              if (data.reason) {
+                setInitialClaimText(data.reason);
+                setAutoSendClaim(data.mode === 'chat');
+              }
+            } catch (err) {
+              console.error(err);
+              loadCustomers();
+            }
+          } else {
+            loadCustomers();
+          }
         }}
       />
     </AppShell>

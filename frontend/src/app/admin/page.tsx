@@ -83,11 +83,11 @@ export default function AdminDashboardPage() {
   };
 
   const headerActions = (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2.5">
       <button
         type="button"
         onClick={() => setIsCreateTicketOpen(true)}
-        className="px-3.5 py-1.5 rounded-lg bg-[#3861FB] hover:bg-[#2E52E0] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+        className="px-4 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-black shadow-xs flex items-center gap-2 transition-all cursor-pointer active:scale-95"
       >
         <Plus className="w-3.5 h-3.5" />
         <span>Create Ticket</span>
@@ -96,7 +96,7 @@ export default function AdminDashboardPage() {
       <button
         type="button"
         onClick={() => setIsResetOpen(true)}
-        className="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 text-xs font-semibold border border-slate-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+        className="px-3.5 py-2 rounded-xl bg-white/70 hover:bg-rose-50 text-slate-700 hover:text-rose-700 text-xs font-bold border border-slate-200/80 shadow-2xs flex items-center gap-2 transition-all cursor-pointer backdrop-blur-md"
         title="Wipe test data and restore baseline demo database"
       >
         <RotateCcw className="w-3.5 h-3.5 text-rose-500" />
@@ -108,9 +108,9 @@ export default function AdminDashboardPage() {
         type="button"
         onClick={() => loadData(false)}
         disabled={isLoading}
-        className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200/80 shadow-2xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+        className="px-3.5 py-2 rounded-xl bg-white/70 hover:bg-white text-slate-700 text-xs font-bold border border-slate-200/80 shadow-2xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 backdrop-blur-md"
       >
-        <RefreshCw className={`w-3.5 h-3.5 text-[#3861FB] ${isLoading ? 'animate-spin' : ''}`} />
+        <RefreshCw className={`w-3.5 h-3.5 text-[#4F46E5] ${isLoading ? 'animate-spin' : ''}`} />
         <span>Refresh</span>
       </button>
     </div>
@@ -147,7 +147,6 @@ export default function AdminDashboardPage() {
           onSelectTicket={setSelectedTicketId}
           isLoading={isLoading}
           newTicketIds={newTicketIds}
-          onCreateTicket={() => setIsCreateTicketOpen(true)}
         />
       </div>
 

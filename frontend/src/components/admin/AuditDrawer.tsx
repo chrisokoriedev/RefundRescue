@@ -48,13 +48,13 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
   if (!ticketId) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/30 backdrop-blur-xs flex justify-end animate-in fade-in duration-150">
-      <div className="w-full max-w-xl bg-white border-l border-slate-200 h-full flex flex-col shadow-2xl overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
+      <div className="w-full max-w-xl apple-glass-elevated bg-white/95 border-l border-white/80 h-full flex flex-col shadow-2xl overflow-y-auto">
         {/* Drawer Header */}
-        <div className="sticky top-0 bg-white/95 backdrop-blur-md p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white/80 backdrop-blur-xl p-5 border-b border-slate-200/60 flex items-center justify-between z-10 shadow-2xs">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-sm font-bold text-slate-900">{ticketId}</span>
+              <span className="font-mono text-base font-black text-slate-900">{ticketId}</span>
               {ticket && (
                 <DecisionBadge
                   decision={ticket.decision}
@@ -64,13 +64,13 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                 />
               )}
             </div>
-            <span className="text-[11px] text-slate-400 font-medium">AI reasoning & decision audit trail</span>
+            <span className="text-[11px] text-slate-500 font-medium">AI reasoning & decision audit trail</span>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -79,11 +79,11 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
         {/* Content */}
         <div className="p-5 flex-1 flex flex-col gap-4">
           {isLoading && (
-            <div className="p-12 text-center text-slate-400 text-xs">Loading ticket audit trace...</div>
+            <div className="p-12 text-center text-slate-400 text-xs font-medium">Loading ticket audit trace...</div>
           )}
 
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
               {error}
             </div>
           )}
@@ -92,7 +92,7 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
             <>
               {/* Injection Alert Banner */}
               {ticket.prompt_injection_detected && (
-                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2.5">
+                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2.5 shadow-xs">
                   <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold block text-rose-900">Suspicious Message Blocked</span>
@@ -103,14 +103,14 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
 
               {/* Private AI Admin Alert */}
               {(ticket.reasoning_summary?.includes('[Private Admin Alert]') || (ticket.confidence_score < 0.75 && ticket.decision === 'ESCALATED')) && (
-                <div className="p-3.5 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-950 text-xs flex items-start gap-2.5 shadow-2xs">
-                  <div className="w-6 h-6 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">
+                <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-950 text-xs flex items-start gap-2.5 shadow-xs">
+                  <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">
                     ⚠️
                   </div>
                   <div className="flex flex-col gap-1 flex-1">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-amber-900 text-xs">Private AI Admin Alert</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-200/70 text-amber-900 font-bold">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-200/70 text-amber-900 font-bold">
                         Confidence: {Math.round(ticket.confidence_score * 100)}%
                       </span>
                     </div>
@@ -124,7 +124,7 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
+              <div className="flex items-center justify-between p-4 bg-white/70 border border-slate-200/70 rounded-2xl shadow-xs backdrop-blur-md">
                 <div>
                   <span className="text-xs font-bold text-slate-900 block">Manual Decision</span>
                   <span className="text-[11px] text-slate-500">Change the automated decision, with a required reason note</span>
@@ -132,7 +132,7 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                 <button
                   type="button"
                   onClick={() => onOpenOverride(ticket)}
-                  className="px-3 py-1.5 bg-[#3861FB] hover:bg-[#2E52E0] text-white text-xs font-semibold rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3.5 py-1.5 bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
                 >
                   <ArrowRightLeft className="w-3.5 h-3.5" />
                   <span>Manual Override</span>
@@ -140,47 +140,47 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
               </div>
 
               {/* Customer & Order Context */}
-              <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-xl flex flex-col gap-2 text-xs">
+              <div className="p-4 bg-white/70 border border-slate-200/70 rounded-2xl flex flex-col gap-2.5 text-xs shadow-xs backdrop-blur-md">
                 <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
                   <span className="font-bold text-slate-900 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-[#3861FB]" />
+                    <User className="w-3.5 h-3.5 text-[#4F46E5]" />
                     Customer Profile
                   </span>
-                  <span className="text-slate-500 font-mono">{ticket.customer_id}</span>
+                  <span className="text-slate-500 font-mono font-medium">{ticket.customer_id}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-slate-600 text-[11px]">
                   <div>Name: <span className="text-slate-900 font-semibold">{ticket.customer_name}</span></div>
                   <div>Loyalty Tier: <span className="text-slate-900 font-semibold">{ticket.loyalty_tier}</span></div>
-                  <div>Order ID: <span className="text-slate-900 font-mono">{ticket.order_id}</span></div>
-                  <div>Claim Amount: <span className="text-[#3861FB] font-bold">${ticket.requested_amount.toFixed(2)}</span></div>
+                  <div>Order ID: <span className="text-slate-900 font-mono font-medium">{ticket.order_id}</span></div>
+                  <div>Claim Amount: <span className="text-[#4F46E5] font-black">${ticket.requested_amount.toFixed(2)}</span></div>
                 </div>
               </div>
 
               {/* Customer Raw Message */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
                   Customer Claim Reason:
                 </span>
-                <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-800 italic">
+                <div className="p-3.5 bg-slate-50/80 border border-slate-200/70 rounded-2xl text-xs text-slate-800 italic">
                   &quot;{ticket.reason}&quot;
                 </div>
               </div>
 
               {/* AI reasoning */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-[#3861FB]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#4F46E5]" />
                   AI Reasoning:
                 </span>
-                <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-700 flex flex-col gap-2.5">
+                <div className="p-4 bg-white/80 border border-slate-200/70 rounded-2xl text-xs text-slate-700 flex flex-col gap-3 shadow-xs">
                   <p className="leading-relaxed font-medium">{ticket.reasoning_summary}</p>
 
                   {/* Matched Policies */}
                   {ticket.policy_clauses && ticket.policy_clauses.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1 pt-2 border-t border-slate-200/60">
+                    <div className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t border-slate-200/60">
                       <span className="text-[9px] uppercase font-bold text-slate-400">Policies:</span>
                       {ticket.policy_clauses.map((p) => (
-                        <span key={p} className="px-2 py-0.5 rounded-md bg-blue-50 text-[#3861FB] border border-blue-100 text-[10px] font-mono font-bold">
+                        <span key={p} className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-[#4F46E5] border border-indigo-100 text-[10px] font-mono font-bold">
                           {p}
                         </span>
                       ))}
@@ -190,39 +190,39 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
               </div>
 
               {/* Emitted Customer Response */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
                   Customer-Facing Response:
                 </span>
-                <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-800 leading-relaxed font-medium">
+                <div className="p-3.5 bg-slate-50/80 border border-slate-200/70 rounded-2xl text-xs text-slate-800 leading-relaxed font-medium">
                   {ticket.customer_response}
                 </div>
               </div>
 
               {/* Order Line Items */}
               {ticket.items && ticket.items.length > 0 && (
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1.5">
                   <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 flex items-center gap-1">
                     <Package className="w-3.5 h-3.5 text-slate-400" />
                     Items In Order:
                   </span>
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-2">
                     {ticket.items.map((item) => (
                       <div
                         key={item.id}
-                        className="p-2.5 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-between text-xs"
+                        className="p-3 bg-white/70 border border-slate-200/70 rounded-xl flex items-center justify-between text-xs shadow-2xs"
                       >
                         <div className="flex flex-col">
-                          <span className="text-slate-900 font-semibold">{item.product_name}</span>
+                          <span className="text-slate-900 font-bold">{item.product_name}</span>
                           <span className="text-[10px] text-slate-400 font-mono">SKU: {item.sku}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           {item.is_final_sale === 1 && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold">
+                            <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold">
                               FINAL SALE
                             </span>
                           )}
-                          <span className="font-extrabold text-slate-900">${item.unit_price.toFixed(2)}</span>
+                          <span className="font-black text-slate-900">${item.unit_price.toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
@@ -236,15 +236,15 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                   <History className="w-3.5 h-3.5 text-slate-400" />
                   Audit Trail:
                 </span>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   {ticket.auditLogs && ticket.auditLogs.length > 0 ? (
                     ticket.auditLogs.map((log) => (
                       <div
                         key={log.id}
-                        className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-xs flex flex-col gap-0.5"
+                        className="p-3.5 bg-white/70 border border-slate-200/70 rounded-xl text-xs flex flex-col gap-1 shadow-2xs"
                       >
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className={`font-bold ${log.actor === 'HUMAN_SUPERVISOR' ? 'text-[#3861FB]' : 'text-slate-700'}`}>
+                          <span className={`font-bold ${log.actor === 'HUMAN_SUPERVISOR' ? 'text-[#4F46E5]' : 'text-slate-700'}`}>
                             {log.actor === 'HUMAN_SUPERVISOR' ? '👤 Manual Override' : '🤖 AI Review'}
                           </span>
                           <span className="text-slate-400 text-[10px] font-medium">{new Date(log.created_at).toLocaleString()}</span>

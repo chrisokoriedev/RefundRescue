@@ -82,48 +82,48 @@ export default function PolicyRulesPage() {
       title="Refund Policy Rules"
     >
       {/* Header Banner Card */}
-      <div className="bg-white rounded-xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col gap-2 relative overflow-hidden">
+      <div className="apple-liquid-glass rounded-3xl p-6 sm:p-7 shadow-xs border border-white/80 flex flex-col gap-2.5 relative overflow-hidden">
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-blue-50 text-[#3861FB] border border-blue-100 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#3861FB]" />
+          <span className="px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-indigo-50 text-[#4F46E5] border border-indigo-100 flex items-center gap-1.5 shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#4F46E5]" />
             Business Rule Specifications
           </span>
         </div>
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <FileText className="w-5 h-5 text-[#3861FB]" />
+        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+          <FileText className="w-6 h-6 text-[#4F46E5]" />
           <span>Active Store Refund Policies & Constraints</span>
         </h2>
-        <p className="text-xs text-slate-500 leading-relaxed max-w-3xl">
+        <p className="text-xs text-slate-500 leading-relaxed max-w-3xl font-medium">
           RevRescue pairs hardcoded business rules (time limits, price limits, final-sale flags) with an AI review step so every decision follows store policy exactly.
         </p>
       </div>
 
       {/* Policy Cards List */}
       {isLoading ? (
-        <div className="p-10 text-center text-slate-400 text-xs bg-white rounded-xl border border-slate-200/80 shadow-xs">
+        <div className="p-12 text-center text-slate-400 text-xs apple-liquid-glass rounded-3xl border border-white/80 shadow-xs font-medium">
           Loading policy rules...
         </div>
       ) : (
-        <div className="flex flex-col gap-3.5">
+        <div className="flex flex-col gap-4">
           {policies.map((p) => {
             const meta = getRuleDetails(p.code);
             const Icon = meta.icon;
             return (
               <div
                 key={p.code}
-                className="p-5 bg-white border border-slate-200/80 rounded-xl shadow-xs flex flex-col gap-2.5 hover:shadow-sm transition-shadow"
+                className="p-6 apple-liquid-glass border border-white/80 rounded-3xl shadow-xs flex flex-col gap-3 hover:shadow-sm transition-all"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="font-mono text-xs font-bold text-[#3861FB] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-xs font-black text-[#4F46E5] bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 shadow-2xs">
                       {p.code}
                     </span>
-                    <h3 className="font-bold text-sm text-slate-900">{p.name}</h3>
+                    <h3 className="font-black text-sm text-slate-900">{p.name}</h3>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] text-slate-400 font-medium">Default:</span>
-                    <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-bold border ${meta.badge}`}>
+                    <span className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-bold border shadow-2xs ${meta.badge}`}>
                       <Icon className="w-3.5 h-3.5" />
                       <span>{p.defaultOutcome}</span>
                     </span>

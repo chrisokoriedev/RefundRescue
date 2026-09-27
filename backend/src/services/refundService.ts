@@ -80,7 +80,8 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
   }
 
   const matchedPolicies = Array.from(new Set([...preCheck.matchedPolicies, ...aiResult.matchedPolicies]));
-  const ticketId = `TICK-${uuidv4().substring(0, 8).toUpperCase()}`;
+  const existingTicket = db.prepare('SELECT id FROM refund_tickets WHERE order_id = ?').get(order.id) as any;
+  const ticketId = existingTicket ? existingTicket.id : `TICK-${uuidv4().substring(0, 8).toUpperCase()}`;
   const now = new Date().toISOString();
 
   const adminAlert = aiResult.adminAlert || (
@@ -94,30 +95,52 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
     : aiResult.reasoning;
 
   // 7. Stage 5: Save to SQLite Database
-  const insertTicket = db.prepare(`
-    INSERT INTO refund_tickets (
-      id, order_id, customer_id, requested_amount, reason, decision,
-      confidence_score, customer_response, reasoning_summary, risk_level,
-      prompt_injection_detected, policy_clauses, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  if (existingTicket) {
+    db.prepare(`
+      UPDATE refund_tickets
+      SET requested_amount = ?, reason = ?, decision = ?, confidence_score = ?,
+          customer_response = ?, reasoning_summary = ?, risk_level = ?,
+          prompt_injection_detected = ?, policy_clauses = ?, updated_at = ?
+      WHERE id = ?
+    `).run(
+      requestedAmount,
+      request.message,
+      finalDecision,
+      aiResult.confidenceScore,
+      aiResult.customerResponse,
+      reasoningToStore,
+      aiResult.riskLevel,
+      guardrail.isFlagged ? 1 : 0,
+      JSON.stringify(matchedPolicies),
+      now,
+      ticketId
+    );
+  } else {
+    const insertTicket = db.prepare(`
+      INSERT INTO refund_tickets (
+        id, order_id, customer_id, requested_amount, reason, decision,
+        confidence_score, customer_response, reasoning_summary, risk_level,
+        prompt_injection_detected, policy_clauses, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
 
-  insertTicket.run(
-    ticketId,
-    order.id,
-    customer.id,
-    requestedAmount,
-    request.message,
-    finalDecision,
-    aiResult.confidenceScore,
-    aiResult.customerResponse,
-    reasoningToStore,
-    aiResult.riskLevel,
-    guardrail.isFlagged ? 1 : 0,
-    JSON.stringify(matchedPolicies),
-    now,
-    now
-  );
+    insertTicket.run(
+      ticketId,
+      order.id,
+      customer.id,
+      requestedAmount,
+      request.message,
+      finalDecision,
+      aiResult.confidenceScore,
+      aiResult.customerResponse,
+      reasoningToStore,
+      aiResult.riskLevel,
+      guardrail.isFlagged ? 1 : 0,
+      JSON.stringify(matchedPolicies),
+      now,
+      now
+    );
+  }
 
   // 8. Stage 6: Audit Log Entry
   const insertAudit = db.prepare(`

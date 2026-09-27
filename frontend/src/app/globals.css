@@ -22,37 +22,44 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 16px);
-  --font-sans: var(--font-jakarta), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 12px);
+  --radius-3xl: calc(var(--radius) + 20px);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", var(--font-jakarta), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
-  --radius: 1rem;
-  --background: #F3F4F9;
-  --foreground: #0F172A;
-  --card: #FFFFFF;
-  --card-foreground: #0F172A;
-  --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
-  --primary: #3861FB;
+  --radius: 1.125rem; /* Apple squircle baseline */
+  --background: #F1F4FA;
+  --foreground: #0B0F19;
+  --card: rgba(255, 255, 255, 0.78);
+  --card-foreground: #0B0F19;
+  --popover: rgba(255, 255, 255, 0.92);
+  --popover-foreground: #0B0F19;
+  --primary: #4F46E5; /* Electric Iris — distinctive, human, premium */
   --primary-foreground: #FFFFFF;
   --secondary: #F1F5F9;
   --secondary-foreground: #1E293B;
   --muted: #F8FAFC;
   --muted-foreground: #64748B;
   --accent: #EEF2FF;
-  --accent-foreground: #3861FB;
+  --accent-foreground: #4F46E5;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #3861FB;
+  --border: rgba(226, 232, 240, 0.8);
+  --input: rgba(226, 232, 240, 0.8);
+  --ring: #4F46E5;
+
+  /* Apple Liquid Glass tokens */
+  --apple-glass-bg: rgba(255, 255, 255, 0.74);
+  --apple-glass-border: rgba(255, 255, 255, 0.85);
+  --apple-iris: #4F46E5;
+  --apple-orange: #FF5500;
+  --apple-jade: #059669;
 }
 
 @layer base {
@@ -60,12 +67,69 @@
     @apply border-border;
   }
   body {
-    background-color: #F3F4F9;
-    color: #0F172A;
+    background-color: #F1F4FA;
+    background-image: 
+      radial-gradient(at 10% 10%, rgba(79, 70, 229, 0.04) 0px, transparent 50%),
+      radial-gradient(at 90% 90%, rgba(255, 85, 0, 0.03) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(5, 150, 105, 0.02) 0px, transparent 60%);
+    background-attachment: fixed;
+    color: #0B0F19;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
   }
+}
+
+/* Apple Liquid Glass Utility Classes */
+.apple-liquid-glass {
+  background: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  box-shadow: 
+    0 10px 30px -10px rgba(15, 23, 42, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+
+.apple-glass-pill {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 
+    0 2px 8px rgba(15, 23, 42, 0.04),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border-radius: 9999px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-glass-pill:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    0 4px 14px rgba(79, 70, 229, 0.08),
+    0 1px 0 rgba(255, 255, 255, 1) inset;
+}
+
+.apple-glass-elevated {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    0 24px 60px -15px rgba(15, 23, 42, 0.14),
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+}
+
+.apple-spring {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.specular-rim-glow {
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset,
+    0 8px 24px -6px rgba(79, 70, 229, 0.12);
 }
 
 /* Custom subtle scrollbar */
