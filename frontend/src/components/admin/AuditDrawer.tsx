@@ -64,7 +64,7 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                 />
               )}
             </div>
-            <span className="text-[11px] text-slate-400 font-medium">Audit & Deliberation Inspection Trail</span>
+            <span className="text-[11px] text-slate-400 font-medium">AI reasoning & decision audit trail</span>
           </div>
 
           <button
@@ -95,8 +95,8 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                 <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2.5">
                   <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold block text-rose-900">Security Threat Intercepted</span>
-                    Prompt injection or adversarial instruction override was intercepted by the Guardrail service before policy execution.
+                    <span className="font-bold block text-rose-900">Suspicious Message Blocked</span>
+                    This message looked like an attempt to trick the system and was stopped by the security check before any policy rules ran.
                   </div>
                 </div>
               )}
@@ -104,8 +104,8 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
               {/* Action Buttons */}
               <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
                 <div>
-                  <span className="text-xs font-bold text-slate-900 block">Supervisor Action</span>
-                  <span className="text-[11px] text-slate-500">Override automated decision with reason note</span>
+                  <span className="text-xs font-bold text-slate-900 block">Manual Decision</span>
+                  <span className="text-[11px] text-slate-500">Change the automated decision, with a required reason note</span>
                 </div>
                 <button
                   type="button"
@@ -144,11 +144,11 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                 </div>
               </div>
 
-              {/* AI Deliberation Reasoning */}
+              {/* AI reasoning */}
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 flex items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5 text-[#3861FB]" />
-                  AI Deliberation Reasoning:
+                  AI Reasoning:
                 </span>
                 <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-700 flex flex-col gap-2.5">
                   <p className="leading-relaxed font-medium">{ticket.reasoning_summary}</p>
@@ -223,7 +223,7 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
                       >
                         <div className="flex items-center justify-between text-[11px]">
                           <span className={`font-bold ${log.actor === 'HUMAN_SUPERVISOR' ? 'text-[#3861FB]' : 'text-slate-700'}`}>
-                            {log.actor === 'HUMAN_SUPERVISOR' ? '👤 Supervisor Override' : '🤖 AI Deliberation'}
+                            {log.actor === 'HUMAN_SUPERVISOR' ? '👤 Manual Override' : '🤖 AI Review'}
                           </span>
                           <span className="text-slate-400 text-[10px] font-medium">{new Date(log.created_at).toLocaleString()}</span>
                         </div>

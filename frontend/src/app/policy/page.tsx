@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { DealDeckShell } from '../../components/layout/DealDeckShell';
+import { AppShell } from '../../components/layout/AppShell';
 import { PolicyRule, fetchPolicyRules } from '../../lib/refundApi';
 import { FileText, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
@@ -52,7 +52,7 @@ export default function PolicyRulesPage() {
           personaId: 'CUST-101',
           badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
           icon: CheckCircle2,
-          type: 'AI Semantic Deliberation',
+          type: 'AI Review (semantic)',
           tradeoff: 'Gemini evaluates damage claims and drafts compassionate recovery responses.'
         };
       case 'POL-005':
@@ -77,13 +77,12 @@ export default function PolicyRulesPage() {
   };
 
   return (
-    <DealDeckShell
+    <AppShell
       activeView="policy"
-      title="Store Policy Engine Rules"
-      subtitle="Friday, December 15th 2023"
+      title="Refund Policy Rules"
       userProfile={{
         name: 'Policy Engine',
-        role: 'Deterministic Gates'
+        role: 'Business Rules'
       }}
     >
       {/* Header Banner Card */}
@@ -99,7 +98,7 @@ export default function PolicyRulesPage() {
           <span>Active Store Refund Policies & Constraints</span>
         </h2>
         <p className="text-xs text-slate-500 leading-relaxed max-w-3xl">
-          RevRescue pairs hardcoded deterministic boundaries (time, price, final sale flags) with Google Gemini Flash deliberation to ensure complete policy adherence with zero hallucinations.
+          RevRescue pairs hardcoded business rules (time limits, price limits, final-sale flags) with an AI review step so every decision follows store policy exactly.
         </p>
       </div>
 
@@ -148,16 +147,12 @@ export default function PolicyRulesPage() {
 
                   <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-600 flex flex-col justify-between">
                     <div>
-                      <span className="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Test Persona:</span>
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Try it with:</span>
                       <span className="font-bold text-slate-800">{meta.testedBy}</span>
                     </div>
-                    <Link
-                      href="/"
-                      className="inline-flex items-center gap-1 text-[11px] text-[#3861FB] hover:underline mt-2 font-bold"
-                    >
-                      <span>Test Scenario in Customer Portal</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </Link>
+                    <span className="text-[10px] text-slate-400 mt-2 font-medium">
+                      Simulated via the customer portal's sample-customer picker
+                    </span>
                   </div>
                 </div>
               </div>
@@ -165,6 +160,6 @@ export default function PolicyRulesPage() {
           })}
         </div>
       )}
-    </DealDeckShell>
+    </AppShell>
   );
 }

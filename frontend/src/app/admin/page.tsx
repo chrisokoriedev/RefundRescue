@@ -1,11 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { DealDeckShell } from '../../components/layout/DealDeckShell';
-import { DealDeckMetricsRow } from '../../components/dealdeck/DealDeckMetricsRow';
-import { CustomerHabitsChart } from '../../components/dealdeck/CustomerHabitsChart';
-import { ProductStatisticRings } from '../../components/dealdeck/ProductStatisticRings';
-import { CustomerGrowthBubbles } from '../../components/dealdeck/CustomerGrowthBubbles';
+import { AppShell } from '../../components/layout/AppShell';
+import { MetricsSummary } from '../../components/admin/MetricsSummary';
 import { TicketTable } from '../../components/admin/TicketTable';
 import { AuditDrawer } from '../../components/admin/AuditDrawer';
 import { OverrideModal } from '../../components/admin/OverrideModal';
@@ -34,7 +31,7 @@ export default function AdminDashboardPage() {
       setMetrics(metricsData);
       setTickets(ticketsData);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to connect to backend API on port 5000.';
+      const msg = err instanceof Error ? err.message : 'Failed to connect to backend API.';
       setError(msg);
     } finally {
       setIsLoading(false);
@@ -66,13 +63,12 @@ export default function AdminDashboardPage() {
   );
 
   return (
-    <DealDeckShell
+    <AppShell
       activeView="admin"
-      title="Sales Report"
-      subtitle="Friday, December 15th 2023"
+      title="Support Dashboard"
       userProfile={{
         name: 'Ferra Alexandra',
-        role: 'Admin store'
+        role: 'Support Supervisor'
       }}
       headerActions={headerActions}
     >
@@ -91,24 +87,10 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Row 1: Top 4 DealDeck Stat Cards (Vibrant Blue + 3 White Cards) */}
-      <DealDeckMetricsRow metrics={metrics} isLoading={isLoading} />
+      {/* Live summary numbers from GET /api/admin/metrics */}
+      <MetricsSummary metrics={metrics} isLoading={isLoading} />
 
-      {/* Row 2: Charts and Analytics (DealDeck Replica Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column (Customer Habits bar chart) */}
-        <div className="lg:col-span-7">
-          <CustomerHabitsChart />
-        </div>
-
-        {/* Right Column (Product Statistic rings + Customer Growth bubbles) */}
-        <div className="lg:col-span-5 flex flex-col gap-5">
-          <ProductStatisticRings />
-          <CustomerGrowthBubbles />
-        </div>
-      </div>
-
-      {/* Row 3: Ticket Queue Table (With Pagination at the bottom) */}
+      {/* Refund request queue with AI decisions */}
       <div id="tickets">
         <TicketTable
           tickets={tickets}
@@ -117,14 +99,14 @@ export default function AdminDashboardPage() {
         />
       </div>
 
-      {/* Slide-over Audit Drawer in Light Mode */}
+      {/* Slide-over with AI reasoning + audit trail */}
       <AuditDrawer
         ticketId={selectedTicketId}
         onClose={() => setSelectedTicketId(null)}
         onOpenOverride={handleOpenOverride}
       />
 
-      {/* Manual Override Modal in Light Mode */}
+      {/* Manual override modal (supervisor decision) */}
       <OverrideModal
         isOpen={isOverrideOpen}
         onClose={() => {
@@ -134,11 +116,8 @@ export default function AdminDashboardPage() {
         ticket={overrideTarget}
         onSuccess={() => {
           loadData();
-          if (selectedTicketId) {
-            setSelectedTicketId(selectedTicketId);
-          }
         }}
       />
-    </DealDeckShell>
+    </AppShell>
   );
 }

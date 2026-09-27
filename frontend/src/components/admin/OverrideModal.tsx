@@ -61,8 +61,8 @@ export function OverrideModal({ isOpen, onClose, ticket, onSuccess }: OverrideMo
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Supervisor Manual Override</h3>
-            <p className="text-xs text-slate-400">Human-in-the-loop decision adjustment with audit logging</p>
+            <h3 className="text-sm font-bold text-slate-900">Manual Decision Override</h3>
+            <p className="text-xs text-slate-400">Human review decision, saved to the audit log</p>
           </div>
         </div>
 

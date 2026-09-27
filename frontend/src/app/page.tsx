@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { Customer, Order, fetchCustomers, fetchCustomerById } from '../lib/refundApi';
-import { DealDeckShell } from '../components/layout/DealDeckShell';
+import { AppShell } from '../components/layout/AppShell';
 import { PersonaSwitcher } from '../components/refund/PersonaSwitcher';
 import { OrderSelector } from '../components/refund/OrderSelector';
 import { RefundChat } from '../components/refund/RefundChat';
-import { ShieldAlert, Sparkles } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 
 export default function CustomerPortalPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -37,7 +37,7 @@ export default function CustomerPortalPage() {
         await selectCustomer(data[0].id);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to connect to backend on port 5000. Please start the backend.';
+      const msg = err instanceof Error ? err.message : 'Failed to connect to backend. Please start the backend.';
       setError(msg);
     } finally {
       setIsLoading(false);
@@ -54,41 +54,22 @@ export default function CustomerPortalPage() {
   const activeOrder: Order | undefined = selectedCustomer?.orders?.find(o => o.id === selectedOrderId) || selectedCustomer?.orders?.[0];
 
   return (
-    <DealDeckShell
+    <AppShell
       activeView="customer"
       title="Customer Support & Refunds"
-      subtitle="Friday, December 15th 2023"
       userProfile={{
         name: selectedCustomer?.name || 'Sarah Jenkins',
         role: `${selectedCustomer?.loyalty_tier || 'Gold'} Verified Customer`
       }}
     >
-      {/* Welcome Banner Card */}
-      <div className="bg-white rounded-xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50/50 rounded-full blur-2xl pointer-events-none"></div>
-
-        <div className="flex flex-col gap-1.5 max-w-2xl relative z-10">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-blue-50 text-[#3861FB] border border-blue-100 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-[#3861FB]" />
-              AI Support Deliberation Portal
-            </span>
-            <span className="text-slate-300 text-xs">•</span>
-            <span className="text-slate-500 text-xs font-semibold">Instant Policy Decisions</span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            Order Returns, Exchanges & Issue Resolution
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+            Order Resolution & Return Claims
           </h2>
-          <p className="text-xs text-slate-500 leading-relaxed font-normal">
-            Submit refund claims evaluated in real-time by a deterministic policy engine and Google Gemini Flash AI, with built-in prompt injection defense.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Select your purchase below and chat with our automated support assistant for immediate resolution.
           </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200/70 flex flex-col">
-            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Store Protection</span>
-            <span className="text-xs font-bold text-slate-800">POL-001 - POL-005 Active</span>
-          </div>
         </div>
       </div>
 
@@ -107,18 +88,8 @@ export default function CustomerPortalPage() {
         </div>
       )}
 
-      {/* Synthetic Customer Switcher */}
-      <PersonaSwitcher
-        customers={customers}
-        selectedCustomerId={selectedCustomer?.id || 'CUST-101'}
-        onSelectCustomer={selectCustomer}
-        isLoading={isLoading}
-      />
-
-      {/* Main 2-Column Evaluation Workspace */}
       {selectedCustomer && activeOrder ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Left Column: Order Selector & Line Items */}
           <div className="lg:col-span-5" id="orders">
             <OrderSelector
               orders={selectedCustomer.orders || []}
@@ -127,8 +98,15 @@ export default function CustomerPortalPage() {
             />
           </div>
 
-          {/* Right Column: Interactive AI Refund Chat */}
-          <div className="lg:col-span-7" id="chat">
+          <div className="lg:col-span-7 flex flex-col gap-3" id="chat">
+            {/* Sample-customer picker sits directly above the chat it controls */}
+            <PersonaSwitcher
+              customers={customers}
+              selectedCustomerId={selectedCustomer?.id || 'CUST-101'}
+              onSelectCustomer={selectCustomer}
+              isLoading={isLoading}
+            />
+
             <RefundChat
               customer={selectedCustomer}
               order={activeOrder}
@@ -145,6 +123,6 @@ export default function CustomerPortalPage() {
           </div>
         )
       )}
-    </DealDeckShell>
+    </AppShell>
   );
 }

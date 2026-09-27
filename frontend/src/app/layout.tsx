@@ -17,8 +17,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RevRescue — AI Refund & Deliberation Platform",
-  description: "AI-powered customer support refund system with hybrid deterministic + Gemini policy deliberation",
+  title: "RevRescue — AI Refund Assistant",
+  description: "AI-powered customer support refund system with policy-based rules and AI review",
 };
 
 export default function RootLayout({

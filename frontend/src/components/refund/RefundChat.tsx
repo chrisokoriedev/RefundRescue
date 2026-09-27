@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Customer, Order, RefundEvaluationResponse, submitRefundEvaluation } from '../../lib/refundApi';
 import { DecisionBadge } from './DecisionBadge';
 import { Send, Sparkles, AlertCircle, Bot, User, ShieldAlert, RefreshCw } from 'lucide-react';
@@ -21,6 +21,8 @@ interface RefundChatProps {
 
 export function RefundChat({ customer, order, onEvaluationComplete }: RefundChatProps) {
   const msgCounter = useRef(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome-0',
@@ -33,6 +35,41 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
   const [inputMessage, setInputMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [thinkingStep, setThinkingStep] = useState(0);
+
+  // Staged status messages that mirror the real backend pipeline while the AI works
+  const thinkingSteps = [
+    'Reading your order details…',
+    'Checking the refund policy rules…',
+    'AI review of your claim…',
+    'Finalizing the decision…'
+  ];
+
+  // Cycle through thinking steps while waiting for the backend
+  useEffect(() => {
+    if (!isSubmitting) {
+      setThinkingStep(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setThinkingStep(prev => Math.min(prev + 1, thinkingSteps.length - 1));
+    }, 900);
+    return () => clearInterval(interval);
+  }, [isSubmitting]);
+
+  // Auto-scroll to the newest message
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }
+  }, [messages, isSubmitting, error]);
+
+  // Focus the input when a new order/customer is loaded
+  useEffect(() => {
+    resetChat();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customer.id, order.id]);
 
   const suggestedPrompts = [
     'My cookware set arrived shattered with broken glass lids.',
@@ -102,6 +139,8 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
       }
     ]);
     setError(null);
+    setInputMessage('');
+    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   return (
@@ -116,10 +155,12 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <span>AI Support Agent</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-                Active Deliberation
+                Active Review
               </span>
             </h3>
-            <p className="text-xs text-slate-400">Evaluating against store policy rules and fraud guardrails</p>
+            <p className="text-xs text-slate-400">
+              {isSubmitting ? 'Checking your claim against store policy…' : 'Evaluating against store policy rules and fraud guardrails'}
+            </p>
           </div>
         </div>
 
@@ -156,11 +197,14 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
       </div>
 
       {/* Chat Messages Stream */}
-      <div className="flex-1 overflow-y-auto space-y-3.5 pr-1">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3.5 pr-1 scroll-smooth">
         {messages.map((msg) => {
           const isUser = msg.sender === 'customer';
           return (
-            <div key={msg.id} className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
+            <div
+              key={msg.id}
+              className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+            >
               {!isUser && (
                 <div className="w-7 h-7 rounded-md bg-blue-50 text-[#3861FB] border border-blue-100 flex-shrink-0 flex items-center justify-center mt-0.5">
                   <Bot className="w-3.5 h-3.5" />
@@ -215,7 +259,7 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
                       {/* Internal Reasoning for Support Audit */}
                       <div className="p-2.5 rounded-md bg-white border border-slate-200/80 text-[11px] text-slate-600">
                         <span className="font-bold text-slate-900 block mb-0.5 text-[9px] uppercase tracking-wider">
-                          Internal Deliberation Trace ({msg.evaluation.engineUsed}):
+                          AI Reasoning Trace ({msg.evaluation.engineUsed}):
                         </span>
                         {msg.evaluation.reasoningSummary}
                       </div>
@@ -236,17 +280,19 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
         })}
 
         {isSubmitting && (
-          <div className="flex gap-2.5 justify-start">
+          <div className="flex gap-2.5 justify-start animate-in fade-in duration-200">
             <div className="w-7 h-7 rounded-md bg-blue-50 text-[#3861FB] border border-blue-100 flex-shrink-0 flex items-center justify-center animate-pulse">
               <Bot className="w-3.5 h-3.5" />
             </div>
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs text-slate-600 flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs text-slate-600 flex items-center gap-2.5">
               <span className="flex gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3861FB] animate-bounce"></span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3861FB] animate-bounce [animation-delay:0.2s]"></span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3861FB] animate-bounce [animation-delay:0.4s]"></span>
               </span>
-              <span className="font-medium">Deliberating policy rules and verifying constraints...</span>
+              <span key={thinkingStep} className="font-medium animate-in fade-in duration-300">
+                {thinkingSteps[thinkingStep]}
+              </span>
             </div>
           </div>
         )}
@@ -269,6 +315,7 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
         className="mt-3 flex items-center gap-2 pt-2.5 border-t border-slate-100"
       >
         <input
+          ref={inputRef}
           type="text"
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
@@ -279,9 +326,14 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
         <button
           type="submit"
           disabled={!inputMessage.trim() || isSubmitting}
-          className="px-4 py-2.5 bg-[#3861FB] hover:bg-[#2E52E0] disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+          title="Send (or press Enter)"
+          className={`px-4 py-2.5 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${
+            inputMessage.trim() && !isSubmitting
+              ? 'bg-[#3861FB] hover:bg-[#2E52E0] hover:scale-[1.03] active:scale-95'
+              : 'bg-[#3861FB]'
+          }`}
         >
-          <Send className="w-3.5 h-3.5" />
+          <Send className={`w-3.5 h-3.5 ${isSubmitting ? 'animate-pulse' : ''}`} />
           <span>Send</span>
         </button>
       </form>

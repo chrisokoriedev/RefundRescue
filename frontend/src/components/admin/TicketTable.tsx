@@ -67,7 +67,7 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-bold text-slate-900 tracking-tight">Recent Refund Requests & Decisions</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Real-time audit queue of all AI-deliberated tickets and supervisor overrides</p>
+          <p className="text-xs text-slate-400 mt-0.5">Live queue of all AI-reviewed tickets and manual overrides</p>
         </div>
 
         {/* Filter Pills & Search */}
