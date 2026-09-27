@@ -98,20 +98,21 @@ export default function CustomerPortalPage() {
       title="Customer Support & Refunds"
       subtitle={selectedCustomer ? `Helping ${selectedCustomer.name} · ${selectedCustomer.loyalty_tier} tier` : undefined}
       headerActions={headerActions}
+      noPageScroll={true}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+      <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-0.5">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+          <h2 className="text-base font-bold text-slate-900 tracking-tight">
             Order Resolution & Return Claims
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500">
             Select your purchase below and chat with our automated support assistant for immediate resolution.
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between shadow-2xs">
+        <div className="flex-shrink-0 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0" />
             <span>{error}</span>
@@ -126,10 +127,10 @@ export default function CustomerPortalPage() {
       )}
 
       {selectedCustomer && activeOrder ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch overflow-hidden">
           {/* Left column: sample-customer picker + order context, stacked - ONLY scrollable container */}
           <div
-            className="lg:col-span-5 flex flex-col gap-5 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto lg:sticky lg:top-20 pr-1.5 custom-scrollbar"
+            className="lg:col-span-5 h-full overflow-y-auto pr-1.5 custom-scrollbar flex flex-col gap-4"
             id="orders"
           >
             <PersonaSwitcher
@@ -146,8 +147,8 @@ export default function CustomerPortalPage() {
             />
           </div>
 
-          {/* Right column: chat is NOT scrollable, sits cleanly at top */}
-          <div className="lg:col-span-7 lg:sticky lg:top-20" id="chat">
+          {/* Right column: chat floating - ONLY internal messages scroll */}
+          <div className="lg:col-span-7 h-full flex flex-col min-h-0" id="chat">
             <RefundChat
               customer={selectedCustomer}
               order={activeOrder}

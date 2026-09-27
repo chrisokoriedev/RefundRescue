@@ -22,6 +22,7 @@ interface AppShellProps {
   title: string;
   subtitle?: string;
   headerActions?: React.ReactNode;
+  noPageScroll?: boolean;
 }
 
 /**
@@ -34,7 +35,8 @@ export function AppShell({
   activeView,
   title,
   subtitle,
-  headerActions
+  headerActions,
+  noPageScroll = false
 }: AppShellProps) {
   const pathname = useCurrentPathname();
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
@@ -291,10 +293,10 @@ export function AppShell({
         </div>
       )}
 
-      <div className="flex-1 w-full flex flex-col min-h-screen lg:pl-64 xl:pl-72">
+      <div className={`flex-1 w-full flex flex-col ${noPageScroll ? 'lg:h-screen lg:overflow-hidden' : 'min-h-screen'} lg:pl-64 xl:pl-72`}>
 
         {/* Minimal header: title + contextual actions only */}
-        <header className="sticky top-0 z-30 w-full bg-[#F8FAFC]/80 backdrop-blur-xl border-b border-white/80 px-6 sm:px-9 py-4 flex items-center justify-between transition-all shadow-2xs">
+        <header className="flex-shrink-0 z-30 w-full bg-[#F8FAFC]/80 backdrop-blur-xl border-b border-white/80 px-6 sm:px-9 py-3.5 flex items-center justify-between transition-all shadow-2xs">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -304,7 +306,7 @@ export function AppShell({
               <Menu className="w-4 h-4" />
             </button>
             <div className="flex flex-col">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">{title}</h1>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">{title}</h1>
               <p className="text-xs text-slate-500 font-medium mt-0.5">{subtitle || todayFormatted}</p>
             </div>
           </div>
@@ -314,7 +316,7 @@ export function AppShell({
           )}
         </header>
 
-        <main className="flex-1 w-full px-6 sm:px-9 py-7 flex flex-col gap-6">
+        <main className={`flex-1 w-full px-6 sm:px-9 ${noPageScroll ? 'py-3.5 overflow-hidden flex flex-col gap-3 min-h-0' : 'py-7 flex flex-col gap-6'}`}>
           {children}
         </main>
       </div>
