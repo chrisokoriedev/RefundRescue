@@ -9,6 +9,9 @@ export interface RefundEvaluationRequest {
   orderId: string;
   message: string;
   requestedAmount?: number;
+  skipCustomerMessagePersist?: boolean;
+  dialogueHistory?: string;
+  isAutoResumeHandover?: boolean;
 }
 
 export interface RefundEvaluationResult {
@@ -50,7 +53,7 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
 
   // If a human specialist has taken over this conversation, do NOT run AI evaluation!
   const chatSession = getChatSession(request.orderId, request.customerId);
-  if (chatSession.takeoverActive) {
+  if (!request.isAutoResumeHandover && chatSession.takeoverActive) {
     const savedCustMsg = sendCustomerChatMessage(request.orderId, request.customerId, request.message, chatSession.ticketId || undefined);
     return {
       ticketId: chatSession.ticketId || '',
@@ -94,7 +97,9 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
       requestedAmount
     },
     preCheck,
-    guardrail
+    guardrail,
+    dialogueHistory: request.dialogueHistory,
+    isAutoResume: request.isAutoResumeHandover
   });
 
   // 6. Stage 4: Post-Deliberation Verification Gate (Immutable Business Constraints)
@@ -174,13 +179,16 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
     VALUES (?, ?, ?, ?, ?, ?)
   `);
 
-  const auditNote = guardrail.isFlagged
-    ? `Flagged by Security Guardrail: ${guardrail.matchedPatterns.join(', ')}`
-    : adminAlert
-      ? `[Private Admin Alert] ${adminAlert}`
-      : `Deliberated by ${aiResult.engineUsed} with outcome: ${finalDecision}`;
+  const auditAction = request.isAutoResumeHandover ? 'AUTO_RESUME_RESOLVE' : 'AUTO_EVALUATE';
+  const auditNote = request.isAutoResumeHandover
+    ? `AI auto-resumed conversation following specialist handover. Deliberated by ${aiResult.engineUsed} with outcome: ${finalDecision}`
+    : guardrail.isFlagged
+      ? `Flagged by Security Guardrail: ${guardrail.matchedPatterns.join(', ')}`
+      : adminAlert
+        ? `[Private Admin Alert] ${adminAlert}`
+        : `Deliberated by ${aiResult.engineUsed} with outcome: ${finalDecision}`;
 
-  insertAudit.run(`AUD-${uuidv4().substring(0, 8).toUpperCase()}`, ticketId, 'AI_SYSTEM', 'AUTO_EVALUATE', auditNote, now);
+  insertAudit.run(`AUD-${uuidv4().substring(0, 8).toUpperCase()}`, ticketId, 'AI_SYSTEM', auditAction, auditNote, now);
 
   // 9. Stage 7: Persist Dialogue to chat_messages Table
   const insertChat = db.prepare(`
@@ -188,17 +196,19 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  insertChat.run(
-    `MSG-${uuidv4().substring(0, 8).toUpperCase()}`,
-    ticketId,
-    order.id,
-    customer.id,
-    'customer',
-    request.message,
-    null,
-    null,
-    now
-  );
+  if (!request.skipCustomerMessagePersist) {
+    insertChat.run(
+      `MSG-${uuidv4().substring(0, 8).toUpperCase()}`,
+      ticketId,
+      order.id,
+      customer.id,
+      'customer',
+      request.message,
+      null,
+      null,
+      now
+    );
+  }
 
   insertChat.run(
     `MSG-${uuidv4().substring(0, 8).toUpperCase()}`,
@@ -209,7 +219,7 @@ export async function evaluateRefundRequest(request: RefundEvaluationRequest): P
     aiResult.customerResponse,
     finalDecision,
     aiResult.confidenceScore,
-    new Date(Date.now() + 50).toISOString()
+    new Date(Date.now() + 100).toISOString()
   );
 
   return {
@@ -359,13 +369,22 @@ export function sendCustomerChatMessage(orderId: string, customerId: string, mes
   };
 }
 
-export function handoverToAi(orderId: string, customerId: string, ticketId?: string) {
+export async function handoverToAi(orderId: string, customerId: string, ticketId?: string) {
   const db = getDb();
   const now = new Date().toISOString();
   const msgId = `MSG-${uuidv4().substring(0, 8).toUpperCase()}`;
 
+  // Resolve ticketId if not explicitly provided
+  let resolvedTicketId = ticketId;
+  if (!resolvedTicketId) {
+    const existingTicket = db.prepare('SELECT id FROM refund_tickets WHERE order_id = ?').get(orderId) as any;
+    if (existingTicket) {
+      resolvedTicketId = existingTicket.id;
+    }
+  }
+
   // 1. Release takeover in chat_sessions
-  setChatTakeover(orderId, customerId, false, undefined, ticketId);
+  setChatTakeover(orderId, customerId, false, undefined, resolvedTicketId);
 
   // 2. Post announcement message directly to the conversation
   const handoffText = 'Support specialist has handed the conversation back to RevRescue AI Assistant. AI is now active and ready to assist you.';
@@ -374,7 +393,7 @@ export function handoverToAi(orderId: string, customerId: string, ticketId?: str
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     msgId,
-    ticketId || null,
+    resolvedTicketId || null,
     orderId,
     customerId,
     'agent',
@@ -385,13 +404,13 @@ export function handoverToAi(orderId: string, customerId: string, ticketId?: str
   );
 
   // 3. Log audit event if ticket exists
-  if (ticketId) {
+  if (resolvedTicketId) {
     db.prepare(`
       INSERT INTO audit_logs (id, ticket_id, actor, action, notes, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
     `).run(
       `AUD-${uuidv4().substring(0, 8).toUpperCase()}`,
-      ticketId,
+      resolvedTicketId,
       'HUMAN_SUPERVISOR',
       'HANDOVER_TO_AI',
       'Support specialist handed chat control back to AI Assistant.',
@@ -399,10 +418,50 @@ export function handoverToAi(orderId: string, customerId: string, ticketId?: str
     );
   }
 
+  // 4. Auto-resume: AI inspects chat dialogue and customer's message to auto-resolve
+  let autoResumed = false;
+  let evaluation: RefundEvaluationResult | null = null;
+
+  try {
+    const history = db.prepare(`
+      SELECT sender, text, created_at FROM chat_messages
+      WHERE order_id = ? AND customer_id = ?
+      ORDER BY created_at ASC
+    `).all(orderId, customerId) as Array<{ sender: string; text: string; created_at: string }>;
+
+    const customerMessages = history.filter(m => m.sender === 'customer');
+
+    if (customerMessages.length > 0) {
+      const lastCustMsg = customerMessages[customerMessages.length - 1];
+
+      const dialogueHistory = history
+        .map(m => {
+          const role = m.sender === 'customer' ? 'Customer' : m.sender === 'ai' ? 'AI Assistant' : 'Support Specialist';
+          return `${role}: ${m.text}`;
+        })
+        .join('\n');
+
+      evaluation = await evaluateRefundRequest({
+        orderId,
+        customerId,
+        message: lastCustMsg.text,
+        skipCustomerMessagePersist: true,
+        dialogueHistory,
+        isAutoResumeHandover: true
+      });
+
+      autoResumed = true;
+    }
+  } catch (err) {
+    console.error('[HandoverToAI] Auto-resume deliberation error:', err);
+  }
+
   return {
     success: true,
     takeoverActive: false,
     message: handoffText,
+    autoResumed,
+    evaluation,
     created_at: now
   };
 }

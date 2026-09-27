@@ -5,5 +5,11 @@ build/
 backend/data/
 *.db
 .env
+.env.*
 .env.local
+*.env
+backend/.env
+backend/.env.local
+frontend/.env
+frontend/.env.local
 .freebuff/

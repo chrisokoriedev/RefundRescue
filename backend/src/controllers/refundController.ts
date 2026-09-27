@@ -116,7 +116,7 @@ export async function sendAgentReply(req: Request, res: Response) {
 export async function handoverToAiHandler(req: Request, res: Response) {
   const { orderId, customerId, ticketId } = req.body;
   const { handoverToAi } = await import('../services/refundService.js');
-  const result = handoverToAi(orderId, customerId, ticketId);
+  const result = await handoverToAi(orderId, customerId, ticketId);
 
   return res.status(200).json({
     success: true,

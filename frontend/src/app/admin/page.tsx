@@ -155,6 +155,7 @@ export default function AdminDashboardPage() {
         ticketId={selectedTicketId}
         onClose={() => setSelectedTicketId(null)}
         onOpenOverride={handleOpenOverride}
+        onTicketUpdated={() => loadData(true)}
       />
 
       {/* Manual override modal (supervisor decision) */}

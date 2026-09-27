@@ -17,9 +17,10 @@ interface AuditDrawerProps {
   ticketId: string | null;
   onClose: () => void;
   onOpenOverride: (ticket: RefundTicket) => void;
+  onTicketUpdated?: () => void;
 }
 
-export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerProps) {
+export function AuditDrawer({ ticketId, onClose, onOpenOverride, onTicketUpdated }: AuditDrawerProps) {
   const [ticket, setTicket] = useState<RefundTicket | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,6 +138,11 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride }: AuditDrawerPr
       setTakeoverNotice('Chat session successfully handed back to RevRescue AI Assistant.');
       setTimeout(() => setTakeoverNotice(null), 4000);
       await loadHistory(ticket.order_id, ticket.customer_id);
+      const updatedTicket = await fetchAdminTicketById(ticket.id);
+      if (updatedTicket) {
+        setTicket(updatedTicket);
+      }
+      onTicketUpdated?.();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to hand over to AI';
       setError(msg);

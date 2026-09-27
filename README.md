@@ -227,16 +227,16 @@ npm test
 
 ```
 Test Suites: 7 passed, 7 total
-Tests:       42 passed, 42 total
+Tests:       46 passed, 46 total
 Snapshots:   0 total
-Time:        6.92 s
+Time:        3.33 s
 ```
 
 ### Verified Test Suites:
-- `tests/refundApi.test.ts` — Full REST API contract and status codes.
+- `tests/refundApi.test.ts` — Full REST API contract, human takeover isolation, and AI handover flows.
 - `tests/guardrail.test.ts` — Prompt-injection detection across 11 attack patterns.
 - `tests/policyEngine.test.ts` — Deterministic evaluation of POL-001 through POL-005.
-- `tests/refundService.test.ts` — 5-stage evaluation pipeline and multi-turn workflows.
+- `tests/refundService.test.ts` — 5-stage evaluation pipeline, AI auto-resume resolution on handover, and multi-turn workflows.
 - `tests/db.test.ts` — SQLite relational integrity, foreign keys, and seed validation.
 - `tests/resilience.test.ts` — Graceful degradation, error wrappers, and fallbacks.
 - `tests/gracefulShutdown.test.ts` — Process signal handling and clean database closure.
@@ -257,5 +257,5 @@ Time:        6.92 s
 | **Database** | SQLite | Built-in `node:sqlite` (`DatabaseSync`) |
 | **AI Deliberation** | Google Gemini Flash | `@google/genai` (with heuristic fallback) |
 | **Schema Validation** | Zod | `3.24.2` |
-| **Testing** | Jest + ts-jest | 42 unit & integration tests |
+| **Testing** | Jest + ts-jest | 46 unit & integration tests |
 | **Containerization** | Docker & Docker Compose | Multi-stage production builds |

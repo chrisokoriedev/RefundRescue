@@ -46,10 +46,12 @@ export interface DeliberationInput {
   context: PolicyContext;
   preCheck: PolicyPreCheckResult;
   guardrail: GuardrailScanResult;
+  dialogueHistory?: string;
+  isAutoResume?: boolean;
 }
 
 export async function deliberateRefundWithAI(input: DeliberationInput): Promise<AIDeliberationOutput> {
-  const { customerInput, context, preCheck, guardrail } = input;
+  const { customerInput, context, preCheck, guardrail, dialogueHistory } = input;
   const apiKey = process.env.GEMINI_API_KEY;
 
   // 1. If guardrail detected prompt injection, force escalate with high risk immediately
@@ -69,13 +71,13 @@ export async function deliberateRefundWithAI(input: DeliberationInput): Promise<
 
   // 2. If in unit test environment, bypass live network call to avoid quota consumption and test timeouts
   if (process.env.NODE_ENV === 'test') {
-    return generateHeuristicDeliberation(customerInput, context, preCheck);
+    return generateHeuristicDeliberation(customerInput, context, preCheck, dialogueHistory);
   }
 
   // 2. Try Gemini Live API across candidate models if key is present AND the circuit allows it
   if (apiKey && apiKey !== 'mock_key_not_set' && geminiBreaker.canCall()) {
     const ai = new GoogleGenAI({ apiKey });
-    const prompt = buildGeminiPrompt(customerInput, context, preCheck);
+    const prompt = buildGeminiPrompt(customerInput, context, preCheck, dialogueHistory);
 
     for (const modelName of CANDIDATE_MODELS) {
       try {
@@ -136,13 +138,18 @@ export async function deliberateRefundWithAI(input: DeliberationInput): Promise<
   }
 
   // 3. Smart Heuristic Fallback (Guarantees zero-failure and test reliability)
-  return generateHeuristicDeliberation(customerInput, context, preCheck);
+  return generateHeuristicDeliberation(customerInput, context, preCheck, dialogueHistory);
 }
 
-function buildGeminiPrompt(customerInput: string, context: PolicyContext, preCheck: PolicyPreCheckResult): string {
+function buildGeminiPrompt(
+  customerInput: string,
+  context: PolicyContext,
+  preCheck: PolicyPreCheckResult,
+  dialogueHistory?: string
+): string {
   return `You are RevRescue's Senior AI Customer Support Specialist.
 Evaluate the following customer message against store policies and order context.
-
+${dialogueHistory ? `\nPREVIOUS CONVERSATION HISTORY SO FAR:\n${dialogueHistory}\n` : ''}
 STORE POLICIES:
 - POL-001: Final Sale items (is_final_sale = 1) CANNOT be refunded under any circumstance (Result: DENIED).
 - POL-002: Orders older than 30 days cannot be refunded (Result: DENIED).
@@ -156,7 +163,7 @@ ${preCheck.reason ? `Pre-check failure reason: ${preCheck.reason}` : ''}
 CUSTOMER: ${context.customer?.name || 'Customer'} (Loyalty: ${context.customer?.loyalty_tier || 'Standard'}, Past Refunds: ${context.customer?.past_refunds_count || 0})
 ORDER ID: ${context.order.id} | Date: ${context.order.order_date} | Total: $${context.order.total_amount}
 ORDER ITEMS: ${JSON.stringify(context.items.map(i => ({ name: i.product_name, price: i.unit_price, final_sale: i.is_final_sale })))}
-CUSTOMER MESSAGE: "${customerInput}"
+CUSTOMER'S LATEST MESSAGE: "${customerInput}"
 
 INSTRUCTIONS:
 You must output strict JSON matching:
@@ -170,6 +177,7 @@ You must output strict JSON matching:
   "actionItems": string[],
   "adminAlert": "Private note for admin if not fully confident: 'I\\'m not confident about this one: [reason]. Can you take a look at it?'"
 }
+- If this chat was handed back to you after human specialist review, synthesize the conversation history and customer's latest request to provide an authoritative resolution.
 - If code pre-check is DENIED or ESCALATED, you MUST NOT APPROVE. Explain the reason gently and empathetically.
 - If genuine damage or defect is described within policy, approve with high empathy (POL-004).
 - If customer gives a greeting (e.g. "hey", "hello", "hi") or asks an inquiry about an item in their order (e.g. "i want to know about the hepa filter"):
@@ -180,9 +188,11 @@ You must output strict JSON matching:
 function generateHeuristicDeliberation(
   customerInput: string,
   context: PolicyContext,
-  preCheck: PolicyPreCheckResult
+  preCheck: PolicyPreCheckResult,
+  dialogueHistory?: string
 ): AIDeliberationOutput {
   const lowerMsg = customerInput.toLowerCase();
+  const lowerHistory = (dialogueHistory || '').toLowerCase();
 
   // If deterministic pre-check denied (Final Sale or >30 Days)
   if (preCheck.outcome === 'DENIED') {
@@ -243,7 +253,7 @@ function generateHeuristicDeliberation(
   }
 
   // Check for semantic damage / defect / incorrect item in message (POL-004)
-  const isDamageOrDefect = /(shatter|broken|crack|chip|damage|defective|faulty|won't turn on|artifact|leak|wrong size|missing)/i.test(lowerMsg);
+  const isDamageOrDefect = /(shatter|broken|crack|chip|damage|defective|faulty|won't turn on|artifact|leak|wrong size|missing)/i.test(lowerMsg) || /(shatter|broken|crack|chip|damage|defective|faulty)/i.test(lowerHistory);
   const isContradiction = /(never opened.*broken|sealed.*shattered inside|empty box.*lining)/i.test(lowerMsg);
 
   // Conversational greetings or general questions
