@@ -190,6 +190,32 @@ export function overrideTicket(req: Request, res: Response) {
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(auditId, id, 'HUMAN_SUPERVISOR', action, formattedNotes, now);
 
+  // Post official supervisor response directly to customer chat session
+  const chatMsgId = `MSG-${uuidv4().substring(0, 8).toUpperCase()}`;
+  let customerNotice = '';
+  if (decision === 'APPROVED') {
+    customerNotice = `Your refund request has been manually reviewed and APPROVED by a support supervisor. Reason: ${notes.trim()}`;
+  } else if (decision === 'DENIED') {
+    customerNotice = `Your refund request has been manually reviewed by a support supervisor and was DENIED. Reason: ${notes.trim()}`;
+  } else {
+    customerNotice = `Your request has been escalated for high-priority specialist review by a support supervisor. Note: ${notes.trim()}`;
+  }
+
+  db.prepare(`
+    INSERT INTO chat_messages (id, ticket_id, order_id, customer_id, sender, text, decision, confidence_score, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    chatMsgId,
+    id,
+    existing.order_id,
+    existing.customer_id,
+    'agent',
+    customerNotice,
+    decision,
+    1.0,
+    now
+  );
+
   return res.json({
     success: true,
     message: `Ticket successfully overridden to ${decision}`,
