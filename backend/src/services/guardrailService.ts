@@ -27,6 +27,23 @@ const INJECTION_PATTERNS: Array<{ category: string; regex: RegExp }> = [
   { category: 'FORCED_DIRECTIVE', regex: /(?:you\s+must\s+approve|immediately\s+issue\s+(?:a\s+)?(?:full\s+)?refund|bypass\s+all\s+checks)/i }
 ];
 
+/**
+ * True when a message is unintelligible or unrelated to a refund request.
+ * Used by the clarification pre-step and the heuristic fallback so gibberish
+ * is never auto-approved.
+ */
+export function isUnintelligible(input: string): boolean {
+  if (!input || typeof input !== 'string') return true;
+  const isRefundRelated = /(refund|return|replace|damag|defect|broken|wrong|missing|arrived|order|item|product|purchas)/i.test(input);
+  return (
+    input.trim().length < 8 ||                                      // 'ww', 'asdf'
+    !/\S/.test(input) ||                                            // whitespace only
+    !isRefundRelated ||                                             // no refund vocabulary at all
+    /(.)\1{4,}/.test(input) ||                                      // 'aaaaaa', '!!!!!!'
+    (!/\s/.test(input.trim()) && input.trim().length > 30)          // one giant token
+  );
+}
+
 export function scanForPromptInjection(input: string): GuardrailScanResult {
   if (!input || typeof input !== 'string') {
     return {

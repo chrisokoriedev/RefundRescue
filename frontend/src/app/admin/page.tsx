@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AppShell } from '../../components/layout/AppShell';
 import { MetricsSummary } from '../../components/admin/MetricsSummary';
 import { TicketTable } from '../../components/admin/TicketTable';
@@ -14,6 +14,8 @@ export default function AdminDashboardPage() {
   const [tickets, setTickets] = useState<RefundTicket[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [newTicketIds, setNewTicketIds] = useState<Set<string>>(new Set());
+  const knownTicketIds = useRef<Set<string> | null>(null); // null = first load (nothing is "new" then)
 
   // Drawer & Modal state
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -30,6 +32,14 @@ export default function AdminDashboardPage() {
       ]);
       setMetrics(metricsData);
       setTickets(ticketsData);
+
+      // Detect tickets that arrived since the last poll — highlight as NEW
+      const incoming = new Set(ticketsData.map(t => t.id));
+      if (knownTicketIds.current) {
+        const fresh = new Set([...incoming].filter(id => !knownTicketIds.current!.has(id)));
+        if (fresh.size > 0) setNewTicketIds(fresh);
+      }
+      knownTicketIds.current = incoming;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to connect to backend API.';
       setError(msg);
@@ -44,6 +54,19 @@ export default function AdminDashboardPage() {
     }, 0);
     return () => clearTimeout(timer);
   }, [loadData]);
+
+  // Poll every 10s so customer-portal submissions show up here automatically
+  useEffect(() => {
+    const interval = setInterval(loadData, 10_000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
+  // Clear NEW highlights after 30s so the badge stays meaningful
+  useEffect(() => {
+    if (newTicketIds.size === 0) return;
+    const t = setTimeout(() => setNewTicketIds(new Set()), 30_000);
+    return () => clearTimeout(t);
+  }, [newTicketIds]);
 
   const handleOpenOverride = (ticket: RefundTicket) => {
     setOverrideTarget(ticket);
@@ -92,6 +115,7 @@ export default function AdminDashboardPage() {
           tickets={tickets}
           onSelectTicket={setSelectedTicketId}
           isLoading={isLoading}
+          newTicketIds={newTicketIds}
         />
       </div>
 

@@ -131,6 +131,7 @@ export async function submitRefundEvaluation(payload: {
   orderId: string;
   message: string;
   requestedAmount?: number;
+  clarificationCount?: number;
 }): Promise<RefundEvaluationResponse> {
   const res = await fetch(`${API_BASE}/api/refunds/evaluate`, {
     method: 'POST',
@@ -140,6 +141,34 @@ export async function submitRefundEvaluation(payload: {
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Evaluation failed' }));
     throw new Error(err.error || 'Evaluation failed');
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+export interface ClarificationResponse {
+  needsClarification: boolean;
+  question?: string;
+}
+
+/**
+ * Ask the backend whether this message needs ONE follow-up question before
+ * running the full AI evaluation. Part of the multi-turn flow.
+ */
+export async function requestClarification(payload: {
+  customerId: string;
+  orderId: string;
+  message: string;
+  clarificationCount: number;
+}): Promise<ClarificationResponse> {
+  const res = await fetch(`${API_BASE}/api/refunds/clarify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    // On any failure, skip clarification and let the main evaluation decide.
+    return { needsClarification: false };
   }
   const json = await res.json();
   return json.data;

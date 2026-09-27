@@ -3,20 +3,25 @@
 import React, { useState } from 'react';
 import { RefundTicket } from '../../lib/refundApi';
 import { DecisionBadge } from '../refund/DecisionBadge';
-import { ShieldAlert, Search, Eye, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ShieldAlert, Search, Eye, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight, BellRing } from 'lucide-react';
 
 interface TicketTableProps {
   tickets: RefundTicket[];
   onSelectTicket: (ticketId: string) => void;
   isLoading?: boolean;
+  /** Ids that arrived since the last full page load — highlighted as "new" */
+  newTicketIds?: Set<string>;
 }
 
-export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableProps) {
+export function TicketTable({ tickets, onSelectTicket, isLoading, newTicketIds }: TicketTableProps) {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [riskFilter, setRiskFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(8);
+
+  // Quick-preset: jump straight to the escalation queue (human review work)
+  const showEscalationQueueOnly = statusFilter === 'ESCALATED';
 
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(status);
@@ -66,8 +71,22 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
       {/* Header and Controls */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h2 className="text-base font-bold text-slate-900 tracking-tight">Recent Refund Requests & Decisions</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Live queue of all AI-reviewed tickets and manual overrides</p>
+          <div>
+            <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              {showEscalationQueueOnly && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                  <BellRing className="w-3 h-3" />
+                  Escalation Queue
+                </span>
+              )}
+              Recent Refund Requests & Decisions
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {showEscalationQueueOnly
+                ? 'Tickets waiting for a human decision — review the AI reasoning, then override'
+                : 'Live queue of all AI-reviewed tickets and manual overrides'}
+            </p>
+          </div>
         </div>
 
         {/* Filter Pills & Search */}
@@ -153,12 +172,21 @@ export function TicketTable({ tickets, onSelectTicket, isLoading }: TicketTableP
                 <tr
                   key={ticket.id}
                   onClick={() => onSelectTicket(ticket.id)}
-                  className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
+                  className={`transition-colors cursor-pointer group ${
+                    newTicketIds?.has(ticket.id)
+                      ? 'bg-blue-50/70 hover:bg-blue-50'
+                      : 'hover:bg-slate-50/70'
+                  }`}
                 >
                   <td className="py-3 px-4">
                     <span className="font-mono font-bold text-slate-900 group-hover:text-[#3861FB] transition-colors">
                       {ticket.id}
                     </span>
+                    {newTicketIds?.has(ticket.id) && (
+                      <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded bg-[#3861FB] text-white text-[9px] font-bold align-middle">
+                        NEW
+                      </span>
+                    )}
                     <span className="block text-[10px] text-slate-400">
                       {new Date(ticket.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>

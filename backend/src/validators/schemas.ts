@@ -17,7 +17,20 @@ export const evaluateRefundSchema = z.object({
   requestedAmount: z.number()
     .positive('requestedAmount must be positive')
     .max(1_000_000, 'requestedAmount exceeds maximum allowed')
-    .optional()
+    .optional(),
+  // Multi-turn: how many clarification rounds have already happened for this claim
+  clarificationCount: z.coerce.number().int().min(0).max(5).optional()
+});
+
+export const clarifySchema = z.object({
+  customerId: z.string()
+    .regex(/^CUST-\d+$/, 'customerId must match CUST-<number> format'),
+  orderId: z.string()
+    .regex(/^ORD-\d+$/, 'orderId must match ORD-<number> format'),
+  message: z.string()
+    .min(1, 'message is required')
+    .max(5000, 'message must be 5000 characters or fewer'),
+  clarificationCount: z.coerce.number().int().min(0).max(5).default(0)
 });
 
 export const overrideTicketSchema = z.object({

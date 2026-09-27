@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Customer, Order, RefundEvaluationResponse, submitRefundEvaluation } from '../../lib/refundApi';
+import { Customer, Order, RefundEvaluationResponse, submitRefundEvaluation, requestClarification } from '../../lib/refundApi';
 import { DecisionBadge } from './DecisionBadge';
-import { Send, Sparkles, AlertCircle, Bot, User, ShieldAlert, RefreshCw, ShieldCheck, Scale, Brain, Save } from 'lucide-react';
+import { Send, Sparkles, AlertCircle, Bot, User, ShieldAlert, RefreshCw, ShieldCheck, Scale, Brain, Save, HelpCircle } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
   sender: 'customer' | 'ai';
   text: string;
   evaluation?: RefundEvaluationResponse;
+  needsInfo?: boolean; // clarification question, not a final decision
   timestamp: string;
 }
 
@@ -36,6 +37,7 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [thinkingStep, setThinkingStep] = useState(0);
+  const [clarificationCount, setClarificationCount] = useState(0);
 
   // Staged status messages that mirror the real backend pipeline while the AI works
   const thinkingSteps = [
@@ -108,10 +110,36 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
     setIsSubmitting(true);
 
     try {
+      // Multi-turn stage 1: if the claim is vague, ask ONE follow-up question
+      // instead of running (and charging) the full evaluation immediately.
+      const clarify = await requestClarification({
+        customerId: customer.id,
+        orderId: order.id,
+        message: text,
+        clarificationCount
+      });
+
+      if (clarify.needsClarification && clarify.question) {
+        msgCounter.current += 1;
+        setMessages(prev => [...prev, {
+          id: `ai-clarify-${msgCounter.current}`,
+          sender: 'ai',
+          text: clarify.question!,
+          needsInfo: true,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }]);
+        setClarificationCount(c => c + 1);
+        setIsSubmitting(false);
+        setTimeout(() => inputRef.current?.focus(), 50);
+        return;
+      }
+
+      // Stage 2: full evaluation pipeline (guardrail → policy → AI → save)
       const evaluation = await submitRefundEvaluation({
         customerId: customer.id,
         orderId: order.id,
-        message: text
+        message: text,
+        clarificationCount
       });
 
       msgCounter.current += 1;
@@ -125,6 +153,7 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
       };
 
       setMessages(prev => [...prev, aiMsg]);
+      setClarificationCount(0); // decision made — multi-turn cycle complete
       if (onEvaluationComplete) {
         onEvaluationComplete(evaluation);
       }
@@ -148,6 +177,7 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
     ]);
     setError(null);
     setInputMessage('');
+    setClarificationCount(0);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
@@ -264,14 +294,21 @@ export function RefundChat({ customer, order, onEvaluationComplete }: RefundChat
                 </div>
               )}
 
-              <div className={`max-w-[85%] flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
-                <div
+              <div className={`max-w-[85%] flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>                <div
                   className={`p-3.5 rounded-xl text-xs leading-relaxed ${
                     isUser
                       ? 'bg-[#3861FB] text-white rounded-tr-xs shadow-2xs font-medium'
-                      : 'bg-slate-50 border border-slate-200/70 text-slate-800 rounded-tl-xs'
-                  }`}
-                >
+                      : msg.needsInfo
+                        ? 'bg-amber-50 border border-amber-200/80 text-amber-900 rounded-tl-xs'
+                        : 'bg-slate-50 border border-slate-200/70 text-slate-800 rounded-tl-xs'
+                  }`
+                }>
+                  {!isUser && msg.needsInfo && (
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-600 mb-1.5">
+                      <HelpCircle className="w-3 h-3" />
+                      Need a bit more info
+                    </span>
+                  )}
                   <p className="whitespace-pre-wrap">{msg.text}</p>
 
                   {/* AI Structured Evaluation Card */}

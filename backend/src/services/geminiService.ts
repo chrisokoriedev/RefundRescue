@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { PolicyContext, PolicyPreCheckResult } from './policyEngine.js';
-import { GuardrailScanResult } from './guardrailService.js';
+import { GuardrailScanResult, isUnintelligible } from './guardrailService.js';
 import { CircuitBreaker, retryWithBackoff, withTimeout, TimeoutError } from '../utils/resilience.js';
 
 // Model is configurable so a Gemini deprecation never breaks the app silently:
@@ -227,13 +227,7 @@ function generateHeuristicDeliberation(
 
   // Nonsense / not-a-refund-request guard: gibberish or irrelevant messages must
   // NOT fall through to approval. Route them to a human under POL-005 instead.
-  const isRefundRelated = /(refund|return|replace|damag|defect|broken|wrong|missing|arrived|order|item|product|purchas)/i.test(lowerMsg);
-  const looksLikeGibberish =
-    customerInput.trim().length < 8 ||                       // 'ww', 'asdf', empty-ish
-    !/\S/ .test(customerInput) ||                           // whitespace only
-    !isRefundRelated ||                                      // no refund-related vocabulary at all
-    /(.)\1{4,}/.test(customerInput) ||                    // 'aaaaaa', '!!!!!!'
-    !/[ \s]/.test(customerInput.trim()) && customerInput.trim().length > 30; // one giant token with no spaces
+  const looksLikeGibberish = isUnintelligible(customerInput);
 
   if (looksLikeGibberish) {
     return {

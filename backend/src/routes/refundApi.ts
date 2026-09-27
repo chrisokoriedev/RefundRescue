@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { getCustomers, getCustomerById, getOrderById } from '../controllers/customerController.js';
-import { evaluateRefund, getPolicies } from '../controllers/refundController.js';
+import { evaluateRefund, clarifyRefund, getPolicies } from '../controllers/refundController.js';
 import { getMetrics, getTickets, getTicketById, overrideTicket } from '../controllers/adminController.js';
 import { asyncErrorWrapper } from '../middleware/errorHandler.js';
 import { idempotencyMiddleware } from '../middleware/idempotency.js';
 import { rateLimiter } from '../middleware/rateLimiter.js';
 import {
   evaluateRefundSchema,
+  clarifySchema,
   overrideTicketSchema,
   ticketsQuerySchema,
   idParamSchema,
@@ -36,6 +37,12 @@ router.post('/refunds/evaluate',
   idempotencyMiddleware,
   validateBody(evaluateRefundSchema),
   asyncErrorWrapper(evaluateRefund)
+);
+// Multi-turn clarification pre-check: returns a follow-up question if the
+// claim is too vague to judge. Cheap guard so gibberish never reaches the LLM.
+router.post('/refunds/clarify',
+  validateBody(clarifySchema),
+  asyncErrorWrapper(clarifyRefund)
 );
 router.post('/refunds/chat',
   evaluateLimiter,
