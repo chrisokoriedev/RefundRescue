@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { AppShell } from '../../components/layout/AppShell';
 import { PolicyRule, fetchPolicyRules } from '../../lib/refundApi';
-import { FileText, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, Sparkles } from 'lucide-react';
-import Link from 'next/link';
+import { FileText, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Sparkles } from 'lucide-react';
 
 export default function PolicyRulesPage() {
   const [policies, setPolicies] = useState<PolicyRule[]>([]);

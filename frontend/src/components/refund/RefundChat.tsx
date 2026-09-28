@@ -61,23 +61,16 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
   const [takeoverActive, setTakeoverActive] = useState(false);
   const [chatBodyRef] = useAutoAnimate<HTMLDivElement>();
 
-  // Scroll collapse state: fuses pipeline strip & interactive test scenarios to top when scrolling down
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [manualShowPrompts, setManualShowPrompts] = useState<boolean | null>(null);
+  // Collapse state: collapses pipeline strip & interactive test scenarios to maximize chat area
+  const [isPromptsCollapsed, setIsPromptsCollapsed] = useState(false);
 
   const handleChatScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const top = e.currentTarget.scrollTop;
-    if (top > 25) {
-      if (!isScrolled) setIsScrolled(true);
-    } else {
-      if (isScrolled) {
-        setIsScrolled(false);
-        setManualShowPrompts(null);
-      }
+    // Collapse top prompts when scrolling down into the conversation
+    if (top > 25 && !isPromptsCollapsed) {
+      setIsPromptsCollapsed(true);
     }
   };
-
-  const shouldCollapse = manualShowPrompts !== null ? !manualShowPrompts : isScrolled;
 
   // Load chat history from SQLite database on customer or order change
   useEffect(() => {
@@ -186,8 +179,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
     setInputMessage('');
     setThinkingStep(0);
     setClarificationCount(0);
-    setIsScrolled(false);
-    setManualShowPrompts(null);
+    setIsPromptsCollapsed(false);
     setTakeoverActive(false);
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [customer.name, order.id]);
@@ -347,20 +339,20 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
       {/* Top Fixed Area: Header, Live Banner, Pipeline, and 3 Quick Suggestions */}
       <div className="flex-shrink-0">
         {/* Chat Header */}
-        <div className={`flex items-center justify-between border-b border-slate-200/60 transition-all duration-300 ${shouldCollapse ? 'pb-2 mb-2' : 'pb-3 mb-3'}`}>
+        <div className={`flex items-center justify-between border-b border-slate-200/60 transition-all duration-300 ${isPromptsCollapsed ? 'pb-2 mb-2' : 'pb-3 mb-3'}`}>
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className={`rounded-2xl bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE] flex items-center justify-center shadow-2xs transition-all duration-300 flex-shrink-0 ${shouldCollapse ? 'w-7.5 h-7.5' : 'w-9 h-9'}`}>
-              {hasAgentJoined ? <Headset className={shouldCollapse ? 'w-3.5 h-3.5' : 'w-4 h-4'} /> : <Bot className={shouldCollapse ? 'w-3.5 h-3.5' : 'w-4 h-4'} />}
+            <div className={`rounded-2xl bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE] flex items-center justify-center shadow-2xs transition-all duration-300 flex-shrink-0 ${isPromptsCollapsed ? 'w-7.5 h-7.5' : 'w-9 h-9'}`}>
+              {hasAgentJoined ? <Headset className={isPromptsCollapsed ? 'w-3.5 h-3.5' : 'w-4 h-4'} /> : <Bot className={isPromptsCollapsed ? 'w-3.5 h-3.5' : 'w-4 h-4'} />}
             </div>
             <div className="min-w-0">
-              <h3 className={`font-bold text-[#0F172A] flex items-center gap-2 transition-all ${shouldCollapse ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>
+              <h3 className={`font-bold text-[#0F172A] flex items-center gap-2 transition-all ${isPromptsCollapsed ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>
                 <span className="truncate">{hasAgentJoined ? 'Human Specialist Takeover' : 'AI Support Agent'}</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] font-bold shadow-2xs flex items-center gap-1 flex-shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse" />
                   {hasAgentJoined ? 'Specialist Live' : 'Active Review'}
                 </span>
               </h3>
-              <p className={`text-[11px] text-slate-500 font-medium truncate transition-all ${shouldCollapse ? 'hidden sm:block max-w-[320px]' : 'block'}`}>
+              <p className={`text-[11px] text-slate-500 font-medium truncate transition-all ${isPromptsCollapsed ? 'hidden sm:block max-w-[320px]' : 'block'}`}>
                 {hasAgentJoined
                   ? 'A human support specialist is currently managing this conversation directly'
                   : isSubmitting
@@ -374,17 +366,17 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
             {/* Quick Prompts Peek/Toggle Pill when collapsed */}
             <button
               type="button"
-              onClick={() => setManualShowPrompts(prev => prev === true ? false : true)}
+              onClick={() => setIsPromptsCollapsed(prev => !prev)}
               className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
-                shouldCollapse
+                isPromptsCollapsed
                   ? 'bg-[#F5F3FF] hover:bg-[#EDE9FE] text-[#7C3AED] border border-[#DDD6FE]'
                   : 'bg-white/70 hover:bg-white text-slate-600 border border-slate-200'
               }`}
-              title={shouldCollapse ? 'Show test scenarios & pipeline' : 'Minimize test scenarios'}
+              title={isPromptsCollapsed ? 'Show test scenarios & pipeline' : 'Hide test scenarios'}
             >
               <Sparkles className="w-3 h-3 text-[#7C3AED]" />
-              <span className="hidden sm:inline">{shouldCollapse ? 'Test Prompts' : 'Hide Prompts'}</span>
-              <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${shouldCollapse ? '' : 'rotate-180'}`} />
+              <span className="hidden sm:inline">{isPromptsCollapsed ? 'Test Prompts' : 'Hide Prompts'}</span>
+              <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isPromptsCollapsed ? '' : 'rotate-180'}`} />
             </button>
 
             <button
@@ -401,7 +393,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
 
         {/* Live Human Specialist Banner if an agent has taken over */}
         {hasAgentJoined && (
-          <div className={`rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] text-xs flex items-center justify-between shadow-2xs animate-in fade-in duration-300 transition-all ${shouldCollapse ? 'py-1.5 px-2.5 mb-1.5' : 'py-2.5 px-2.5 mb-2.5'}`}>
+          <div className={`rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] text-xs flex items-center justify-between shadow-2xs animate-in fade-in duration-300 transition-all ${isPromptsCollapsed ? 'py-1.5 px-2.5 mb-1.5' : 'py-2.5 px-2.5 mb-2.5'}`}>
             <div className="flex items-center gap-2 min-w-0">
               <span className="relative flex h-2 w-2 flex-shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -420,7 +412,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
             Fuses smoothly to top when user scrolls down to maximize message real estate */}
         <div
           className={`transition-all duration-300 ease-in-out overflow-hidden flex flex-col ${
-            shouldCollapse
+            isPromptsCollapsed
               ? 'max-h-0 opacity-0 -translate-y-2 pointer-events-none scale-98 mb-0'
               : 'max-h-[350px] opacity-100 translate-y-0 scale-100 mb-2'
           }`}
