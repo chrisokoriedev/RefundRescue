@@ -190,11 +190,6 @@ export function seedBaselineTickets(db: DatabaseSync): void {
     VALUES (?, ?, ?, ?, ?, ?)
   `);
 
-  const insertChat = db.prepare(`
-    INSERT INTO chat_messages (id, ticket_id, order_id, customer_id, sender, text, decision, confidence_score, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
   // Baseline Ticket 1: Approved Damaged Cookware Set
   insertTicket.run(
     'TICK-901-APP',
@@ -218,28 +213,6 @@ export function seedBaselineTickets(db: DatabaseSync): void {
     'AI_SYSTEM',
     'AUTO_EVALUATE',
     'Automated approval under policy POL-004: Damaged in transit within 30 days window.',
-    now
-  );
-  insertChat.run(
-    'MSG-001-CUST',
-    'TICK-901-APP',
-    'ORD-901',
-    'CUST-101',
-    'customer',
-    'Cookware set arrived with shattered lids and chipped ceramic during shipping.',
-    null,
-    null,
-    now
-  );
-  insertChat.run(
-    'MSG-001-AI',
-    'TICK-901-APP',
-    'ORD-901',
-    'CUST-101',
-    'ai',
-    'Hi Sarah, thank you for reaching out to us. We apologize for the damaged cookware set. Under our Damaged Goods Policy (POL-004), we have approved your full refund of $180.00 for order #ORD-901.',
-    'APPROVED',
-    0.98,
     now
   );
 
@@ -268,28 +241,6 @@ export function seedBaselineTickets(db: DatabaseSync): void {
     'Automated escalation under policy POL-003: Exceeds $500 threshold. Dispatched private alert to supervisor.',
     now
   );
-  insertChat.run(
-    'MSG-002-CUST',
-    'TICK-904-ESC',
-    'ORD-904',
-    'CUST-104',
-    'customer',
-    'TV display arrived with a cracked screen ($850 > $500 threshold).',
-    null,
-    null,
-    now
-  );
-  insertChat.run(
-    'MSG-002-AI',
-    'TICK-904-ESC',
-    'ORD-904',
-    'CUST-104',
-    'ai',
-    'Hello David, thank you for reaching out regarding your OLED TV. Because your order total exceeds our automated threshold of $500, we have routed your claim directly to a support specialist for manual review.',
-    'ESCALATED',
-    0.74,
-    now
-  );
 
   // Baseline Ticket 3: Denied Final Sale Scarf
   insertTicket.run(
@@ -314,28 +265,6 @@ export function seedBaselineTickets(db: DatabaseSync): void {
     'AI_SYSTEM',
     'AUTO_EVALUATE',
     'Automated rejection under policy POL-001: Item is marked as Final Sale.',
-    now
-  );
-  insertChat.run(
-    'MSG-003-CUST',
-    'TICK-903-DEN',
-    'ORD-903',
-    'CUST-103',
-    'customer',
-    'Customer wants to return clearance cashmere scarf because the shade of red did not match their jacket.',
-    null,
-    null,
-    now
-  );
-  insertChat.run(
-    'MSG-003-AI',
-    'TICK-903-DEN',
-    'ORD-903',
-    'CUST-103',
-    'ai',
-    'Hello Elena, thank you for contacting RefundRescue. We reviewed your claim for order #ORD-903. As stated during checkout and under store policy POL-001, clearance and final-sale merchandise cannot be refunded.',
-    'DENIED',
-    0.99,
     now
   );
 }

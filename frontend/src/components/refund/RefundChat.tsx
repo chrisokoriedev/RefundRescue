@@ -8,7 +8,8 @@ import {
   submitRefundEvaluation,
   requestClarification,
   fetchChatHistoryDetailed,
-  sendCustomerChatMessage
+  sendCustomerChatMessage,
+  clearChatHistory
 } from '../../lib/refundApi';
 import { Send, Sparkles, AlertCircle, Bot, User, RefreshCw, ShieldCheck, Scale, Brain, Save, HelpCircle, CheckCircle2, Clock, ExternalLink, Headset, ChevronDown } from 'lucide-react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
@@ -60,6 +61,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
   const [clarificationCount, setClarificationCount] = useState(0);
   const [takeoverActive, setTakeoverActive] = useState(false);
   const [chatBodyRef] = useAutoAnimate<HTMLDivElement>();
+  const [isResetting, setIsResetting] = useState(false);
 
   // Collapse state: collapses pipeline strip & interactive test scenarios to maximize chat area
   const [isPromptsCollapsed, setIsPromptsCollapsed] = useState(false);
@@ -153,6 +155,21 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
             }
             return prev;
           });
+        } else {
+          // If server history is empty, reset local chat if it previously held customer messages
+          setMessages((prev) => {
+            if (prev.length > 1 || prev.some(m => m.sender === 'customer')) {
+              return [
+                {
+                  id: `welcome-${order.id}`,
+                  sender: 'ai',
+                  text: `Hello ${customer.name}! I am RefundRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
+                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }
+              ];
+            }
+            return prev;
+          });
         }
       } catch {
         // Silently swallow polling network glitch
@@ -163,9 +180,10 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
       isMounted = false;
       clearInterval(interval);
     };
-  }, [order.id, customer.id]);
+  }, [order.id, customer.id, customer.name]);
 
-  const resetChat = React.useCallback(() => {
+  const resetChat = React.useCallback(async () => {
+    setIsResetting(true);
     msgCounter.current += 1;
     setMessages([
       {
@@ -181,8 +199,16 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
     setClarificationCount(0);
     setIsPromptsCollapsed(false);
     setTakeoverActive(false);
-    setTimeout(() => inputRef.current?.focus(), 50);
-  }, [customer.name, order.id]);
+
+    try {
+      await clearChatHistory(order.id, customer.id);
+    } catch (err) {
+      console.warn('Failed to clear chat history on server:', err);
+    } finally {
+      setIsResetting(false);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [customer.name, order.id, customer.id]);
 
   // Cycle through thinking steps while waiting for the backend
   useEffect(() => {
@@ -382,11 +408,12 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
             <button
               type="button"
               onClick={resetChat}
+              disabled={isResetting}
               title="Reset Conversation"
-              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white/80 rounded-xl transition-colors text-xs flex items-center gap-1 cursor-pointer font-bold shadow-2xs"
+              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white/80 rounded-xl transition-colors text-xs flex items-center gap-1 cursor-pointer font-bold shadow-2xs disabled:opacity-50"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Reset</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{isResetting ? 'Resetting…' : 'Reset'}</span>
             </button>
           </div>
         </div>

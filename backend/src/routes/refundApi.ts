@@ -5,6 +5,7 @@ import {
   clarifyRefund,
   getPolicies,
   getChatMessages,
+  clearChatMessages,
   getRecentConversations,
   sendAgentReply,
   handoverToAiHandler,
@@ -77,6 +78,8 @@ router.get('/policy/rules', getPolicies);
 
 // Chat history routes (persisted in SQLite)
 router.get('/chat/history', asyncErrorWrapper(getChatMessages));
+router.delete('/chat/history', asyncErrorWrapper(clearChatMessages));
+router.post('/chat/clear', asyncErrorWrapper(clearChatMessages));
 router.get('/chat/recent', asyncErrorWrapper(getRecentConversations));
 router.post('/chat/agent-reply', validateBody(agentReplySchema), asyncErrorWrapper(sendAgentReply));
 router.post('/chat/handover-to-ai', validateBody(handoverToAiSchema), asyncErrorWrapper(handoverToAiHandler));

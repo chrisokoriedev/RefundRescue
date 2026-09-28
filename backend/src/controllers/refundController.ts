@@ -89,6 +89,25 @@ export async function getChatMessages(req: Request, res: Response) {
   });
 }
 
+export async function clearChatMessages(req: Request, res: Response) {
+  const orderId = (req.query.orderId || req.body.orderId) ? String(req.query.orderId || req.body.orderId) : '';
+  const customerId = (req.query.customerId || req.body.customerId) ? String(req.query.customerId || req.body.customerId) : undefined;
+
+  if (!orderId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required parameter: orderId'
+    });
+  }
+
+  const { clearChatHistory } = await import('../services/refundService.js');
+  const result = clearChatHistory(orderId, customerId);
+  return res.json({
+    success: true,
+    message: result.message
+  });
+}
+
 export async function getRecentConversations(req: Request, res: Response) {
   const limit = req.query.limit ? Number(req.query.limit) : 20;
   const { getRecentChats } = await import('../services/refundService.js');

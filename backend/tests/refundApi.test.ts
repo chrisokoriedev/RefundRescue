@@ -144,5 +144,16 @@ describe('AI Refund System REST API', () => {
     expect(histRes.status).toBe(200);
     expect(histRes.body.takeoverActive).toBe(false);
   });
+
+  it('DELETE /api/chat/history - clears all chat messages and session for an order', async () => {
+    const res = await request(app).delete('/api/chat/history?orderId=ORD-901');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const histRes = await request(app).get('/api/chat/history?orderId=ORD-901');
+    expect(histRes.status).toBe(200);
+    expect(histRes.body.count).toBe(0);
+    expect(histRes.body.data.length).toBe(0);
+  });
 });
 

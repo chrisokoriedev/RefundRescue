@@ -253,6 +253,18 @@ export function getChatHistory(orderId: string, customerId?: string) {
   return db.prepare(query).all(...params);
 }
 
+export function clearChatHistory(orderId: string, customerId?: string) {
+  const db = getDb();
+  if (customerId) {
+    db.prepare('DELETE FROM chat_messages WHERE order_id = ? AND customer_id = ?').run(orderId, customerId);
+    db.prepare('DELETE FROM chat_sessions WHERE order_id = ? AND customer_id = ?').run(orderId, customerId);
+  } else {
+    db.prepare('DELETE FROM chat_messages WHERE order_id = ?').run(orderId);
+    db.prepare('DELETE FROM chat_sessions WHERE order_id = ?').run(orderId);
+  }
+  return { success: true, message: `Chat history cleared for order ${orderId}` };
+}
+
 export function getRecentChats(limit: number = 20) {
   const db = getDb();
   return db.prepare(`

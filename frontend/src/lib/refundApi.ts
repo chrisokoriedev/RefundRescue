@@ -342,6 +342,20 @@ export async function fetchRecentChats(limit = 20): Promise<ChatMessageRecord[]>
   return json.data || [];
 }
 
+export async function clearChatHistory(orderId: string, customerId?: string): Promise<{ success: boolean; message: string }> {
+  const params = new URLSearchParams({ orderId });
+  if (customerId) params.append('customerId', customerId);
+  const res = await fetch(`${API_BASE}/api/chat/history?${params.toString()}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to clear chat history' }));
+    throw new Error(err.error || err.message || 'Failed to clear chat history');
+  }
+  return res.json();
+}
+
 export async function resetDatabaseData(): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/api/admin/reset-data`, {
     method: 'POST',
