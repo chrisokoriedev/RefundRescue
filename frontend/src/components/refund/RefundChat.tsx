@@ -155,21 +155,6 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
             }
             return prev;
           });
-        } else {
-          // If server history is empty, reset local chat if it previously held customer messages
-          setMessages((prev) => {
-            if (prev.length > 1 || prev.some(m => m.sender === 'customer')) {
-              return [
-                {
-                  id: `welcome-${order.id}`,
-                  sender: 'ai',
-                  text: `Hello ${customer.name}! I am RefundRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
-                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                }
-              ];
-            }
-            return prev;
-          });
         }
       } catch {
         // Silently swallow polling network glitch

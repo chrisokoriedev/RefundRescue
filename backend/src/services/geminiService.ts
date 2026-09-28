@@ -5,8 +5,8 @@ import { CircuitBreaker, retryWithBackoff, withTimeout, TimeoutError } from '../
 
 // Model is configurable so a Gemini deprecation never breaks the app silently:
 // set GEMINI_MODEL in .env to override the default.
-const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
-const FALLBACK_MODELS = ['gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-lite-latest'];
+const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+const FALLBACK_MODELS = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest'];
 const CANDIDATE_MODELS = Array.from(new Set([PRIMARY_MODEL, ...FALLBACK_MODELS]));
 
 // ── Resilience configuration for the Gemini downstream ──
@@ -177,11 +177,15 @@ You must output strict JSON matching:
   "actionItems": string[],
   "adminAlert": "Private note for admin if not fully confident: 'I\\'m not confident about this one: [reason]. Can you take a look at it?'"
 }
-- If this chat was handed back to you after human specialist review, synthesize the conversation history and customer's latest request to provide an authoritative resolution.
+- PRODUCT & AMOUNT INTEGRITY (CRITICAL):
+  - Check whether the item the customer is complaining about actually exists in ORDER ITEMS: ${JSON.stringify(context.items.map(i => ({ name: i.product_name, price: i.unit_price, final_sale: i.is_final_sale })))}.
+  - If the customer complains about a product that was NEVER purchased in this order (for example, customer claims a "TV display", "laptop", or "screen" when this order is for "Italian Wool Overcoat" or "Cookware"), this is an UNMATCHED / SUSPICIOUS claim. You MUST set decision: "ESCALATED", confidenceScore: 0.95, riskLevel: "HIGH", matchedPolicies: ["POL-005"], and explain that the claimed product does not match order #${context.order.id}.
+  - If the customer claims an amount exceeding $500, or exceeding the order total ($${context.order.total_amount}), you MUST set decision: "ESCALATED" under POL-003.
+  - If the customer makes contradictory statements (e.g. claiming box was sealed and empty, but also tore the lining, or never opened but broken inside), you MUST set decision: "ESCALATED" under POL-005.
+- If customer gives a greeting (e.g. "hey", "hello", "hi", "heyye") or asks an inquiry without an explicit refund claim:
+  Greet them warmly and helpfully! Do NOT approve a refund or reject them. Set decision: "ESCALATED", confidenceScore: 0.70, riskLevel: "LOW", and adminAlert: "I'm not confident about this one: Customer sent a general greeting/inquiry without an explicit refund claim yet. Can you take a look at it?".
 - If code pre-check is DENIED or ESCALATED, you MUST NOT APPROVE. Explain the reason gently and empathetically.
-- If genuine damage or defect is described within policy, approve with high empathy (POL-004).
-- If customer gives a greeting (e.g. "hey", "hello", "hi") or asks an inquiry about an item in their order (e.g. "i want to know about the hepa filter"):
-  Greet them warmly and helpfully! Do NOT reject them or treat them as gibberish. Set decision: "ESCALATED", confidenceScore: 0.70, riskLevel: "LOW", and adminAlert: "I'm not confident about this one: Customer sent a general greeting/inquiry without an explicit refund claim yet. Can you take a look at it?".
+- If genuine damage or defect is described for the actual ordered items within policy, approve with high empathy (POL-004).
 - If you are ever not confident or the claim requires human review, set decision: "ESCALATED", confidenceScore < 0.75, and populate adminAlert with a private note for the admin explaining why you need their review.`;
 }
 
@@ -254,10 +258,9 @@ function generateHeuristicDeliberation(
 
   // Check for semantic damage / defect / incorrect item in message (POL-004)
   const isDamageOrDefect = /(shatter|broken|crack|chip|damage|defective|faulty|won't turn on|artifact|leak|wrong size|missing)/i.test(lowerMsg) || /(shatter|broken|crack|chip|damage|defective|faulty)/i.test(lowerHistory);
-  const isContradiction = /(never opened.*broken|sealed.*shattered inside|empty box.*lining)/i.test(lowerMsg);
 
-  // Conversational greetings or general questions
-  const isGreeting = /^(hey|hello|hi|good\s*(morning|afternoon|evening)|howdy)\b/i.test(customerInput.trim());
+  // 1. Check for conversational greetings or general questions
+  const isGreeting = /^(hey+|heyy+|heyye|hello+|hi+|good\s*(morning|afternoon|evening)|howdy)\b/i.test(customerInput.trim()) || /^(hey+|hi+|hello+)$/i.test(customerInput.trim());
   const isGeneralInquiry = /(how|what|tell me|info|information|know about|status|tracking|deliver|filter)/i.test(lowerMsg);
 
   if (isGreeting || (isGeneralInquiry && !isDamageOrDefect && !lowerMsg.includes('refund') && !lowerMsg.includes('return'))) {
@@ -267,11 +270,77 @@ function generateHeuristicDeliberation(
       confidenceScore: 0.70,
       riskLevel: 'LOW',
       matchedPolicies: ['POL-005'],
-      reasoning: 'Customer provided a greeting or general product inquiry without an explicit refund claim yet.',
-      customerResponse: `Hello ${custFirstName}! Thank you for reaching out. How can I help you with your order (${context.order.id}) today?`,
+      reasoning: 'Customer provided a greeting or general inquiry without an explicit refund claim yet.',
+      customerResponse: `Hello ${custFirstName}! Thank you for contacting RefundRescue support. How can I assist you with order #${context.order.id} today?`,
       actionItems: ['AWAIT_CUSTOMER_DETAILS'],
       engineUsed: 'HEURISTIC_FALLBACK',
       adminAlert: "I'm not confident about this one: Customer sent a general greeting/inquiry without an explicit claim yet. Can you take a look at it?"
+    };
+  }
+
+  // 2. Check for explicit amount in message > $500 (POL-003)
+  const claimedAmtMatch = customerInput.match(/\$?(\d{3,}(?:\.\d{2})?)/);
+  if (claimedAmtMatch) {
+    const claimedVal = parseFloat(claimedAmtMatch[1]);
+    if (claimedVal > 500) {
+      return {
+        decision: 'ESCALATED',
+        confidenceScore: 0.95,
+        riskLevel: 'HIGH',
+        matchedPolicies: ['POL-003'],
+        reasoning: `Claimed amount of $${claimedVal.toFixed(2)} exceeds the $500 automated threshold under POL-003.`,
+        customerResponse: `Because your claimed amount ($${claimedVal.toFixed(2)}) exceeds our automated threshold of $500.00, your request has been routed to a human support specialist for personal review.`,
+        actionItems: ['SUPERVISOR_QUEUE', 'HOLD_TRANSACTION'],
+        engineUsed: 'HEURISTIC_FALLBACK',
+        adminAlert: `High-value claim ($${claimedVal.toFixed(2)} > $500). Supervisor review required.`
+      };
+    }
+  }
+
+  // 3. Check for product mismatch against order line items (POL-005)
+  const orderProductNames = (context.items || []).map(i => i.product_name.toLowerCase()).join(' ');
+  const commonMismatches = [
+    { name: 'TV / Display', keywords: ['tv', 'television', 'oled', 'screen', 'display'], orderHas: ['tv', 'oled', 'screen', 'display'] },
+    { name: 'Cookware set', keywords: ['cookware', 'ceramic pot', 'pan lid'], orderHas: ['cookware', 'ceramic', 'pan'] },
+    { name: 'Laptop / Computer', keywords: ['laptop', 'macbook', 'computer'], orderHas: ['laptop', 'macbook', 'computer'] },
+    { name: 'Espresso machine', keywords: ['espresso', 'coffee maker'], orderHas: ['espresso', 'coffee'] },
+    { name: 'Smartwatch', keywords: ['watch', 'smartwatch'], orderHas: ['watch'] },
+    { name: 'Apparel / Coat', keywords: ['coat', 'jacket', 'overcoat', 'scarf', 'dress'], orderHas: ['coat', 'jacket', 'overcoat', 'scarf', 'dress'] }
+  ];
+
+  for (const mismatch of commonMismatches) {
+    const claimedThis = mismatch.keywords.some(k => lowerMsg.includes(k));
+    const orderHasThis = mismatch.orderHas.some(k => orderProductNames.includes(k));
+    if (claimedThis && !orderHasThis) {
+      return {
+        decision: 'ESCALATED',
+        confidenceScore: 0.94,
+        riskLevel: 'HIGH',
+        matchedPolicies: ['POL-005'],
+        reasoning: `Customer claim refers to "${mismatch.name}", which is not among order #${context.order.id} items (${context.items.map(i => i.product_name).join(', ')}). Mismatched claim escalated under POL-005.`,
+        customerResponse: `We noticed you mentioned an issue with ${mismatch.name}, but order #${context.order.id} contains ${context.items.map(i => i.product_name).join(', ')}. A support specialist is reviewing your account to ensure we assist with the correct purchase.`,
+        actionItems: ['VERIFY_ORDER_ITEMS', 'SUPERVISOR_QUEUE'],
+        engineUsed: 'HEURISTIC_FALLBACK',
+        adminAlert: `Product mismatch: Customer claimed ${mismatch.name} but order contains ${context.items.map(i => i.product_name).join(', ')}.`
+      };
+    }
+  }
+
+  // 4. Check for contradiction (POL-005)
+  const isContradiction = /(never opened.*broken|sealed.*shattered inside|empty box.*lining|box was empty.*tore|sealed.*empty.*tore|empty.*damaged inside|empty.*lining)/i.test(lowerMsg) ||
+    (lowerMsg.includes('empty') && (lowerMsg.includes('tore') || lowerMsg.includes('torn') || lowerMsg.includes('lining') || lowerMsg.includes('broken')));
+
+  if (isContradiction) {
+    return {
+      decision: 'ESCALATED',
+      confidenceScore: 0.92,
+      riskLevel: 'HIGH',
+      matchedPolicies: ['POL-005'],
+      reasoning: 'Customer statement contains conflicting or contradictory assertions regarding product and package state (e.g. box empty but item lining torn).',
+      customerResponse: 'We have received your claim. Due to conflicting details regarding the packaging and item condition, we have forwarded your ticket to our senior customer relations team for review.',
+      actionItems: ['REQUEST_ADDITIONAL_PHOTOS', 'SUPERVISOR_REVIEW'],
+      engineUsed: 'HEURISTIC_FALLBACK',
+      adminAlert: 'Contradictory claim: Conflicting statements regarding product condition and packaging.'
     };
   }
 
@@ -291,20 +360,8 @@ function generateHeuristicDeliberation(
     };
   }
 
-  if (isContradiction) {
-    return {
-      decision: 'ESCALATED',
-      confidenceScore: 0.88,
-      riskLevel: 'MEDIUM',
-      matchedPolicies: ['POL-005'],
-      reasoning: 'Customer statement contains conflicting or contradictory assertions regarding product state.',
-      customerResponse: 'We have received your claim and forwarded it to our customer relations team for further review to ensure we handle your request properly.',
-      actionItems: ['REQUEST_ADDITIONAL_PHOTOS', 'SUPERVISOR_REVIEW'],
-      engineUsed: 'HEURISTIC_FALLBACK'
-    };
-  }
-
-  if (isDamageOrDefect || lowerMsg.includes('refund') || lowerMsg.includes('return')) {
+  // 5. Genuine damage or defect within policy window
+  if (isDamageOrDefect) {
     return {
       decision: 'APPROVED',
       confidenceScore: 0.94,
@@ -317,15 +374,16 @@ function generateHeuristicDeliberation(
     };
   }
 
-  // Default standard approval within 30-day window
+  // 6. Default when no clear damage/defect claim is stated: request clarification, DO NOT default-approve
   return {
-    decision: 'APPROVED',
-    confidenceScore: 0.90,
+    decision: 'ESCALATED',
+    confidenceScore: 0.72,
     riskLevel: 'LOW',
-    matchedPolicies: ['POL-004'],
-    reasoning: 'Standard return request within 30-day policy window.',
-    customerResponse: `Your refund request has been approved! We have emailed you the return instructions and prepaid shipping label. Thank you for shopping with us.`,
-    actionItems: ['GENERATE_PREPAID_LABEL'],
-    engineUsed: 'HEURISTIC_FALLBACK'
+    matchedPolicies: ['POL-005'],
+    reasoning: 'Customer inquiry does not contain a specific defect or refund claim. Awaiting clarification from customer.',
+    customerResponse: `Hello! How can I assist you with order #${context.order.id}? If you are experiencing an issue with your purchase, please describe the condition or reason for return so we can help.`,
+    actionItems: ['AWAIT_CUSTOMER_DETAILS'],
+    engineUsed: 'HEURISTIC_FALLBACK',
+    adminAlert: "I'm not confident about this one: Customer message lacks a specific return/refund reason. Can you take a look at it?"
   };
 }
