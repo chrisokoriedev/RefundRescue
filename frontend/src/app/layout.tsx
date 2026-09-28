@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RevRescue — AI Refund Assistant",
+  title: "RefundRescue — AI Refund Assistant",
   description: "AI-powered customer support refund system with policy-based rules and AI review",
 };
 
@@ -34,7 +34,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className={`${outfit.className} min-h-full bg-[#F8FAFC] text-[#0F172A] antialiased font-sans selection:bg-[#7C3AED]/20 selection:text-[#7C3AED]`} suppressHydrationWarning>
-        <ThemeProvider defaultTheme="light" storageKey="revrescue-theme">
+        <ThemeProvider defaultTheme="light" storageKey="refundrescue-theme">
           <TooltipProvider>
             {children}
             <Toaster richColors position="top-right" />

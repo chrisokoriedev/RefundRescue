@@ -387,7 +387,7 @@ export async function handoverToAi(orderId: string, customerId: string, ticketId
   setChatTakeover(orderId, customerId, false, undefined, resolvedTicketId);
 
   // 2. Post announcement message directly to the conversation
-  const handoffText = 'Support specialist has handed the conversation back to RevRescue AI Assistant. AI is now active and ready to assist you.';
+  const handoffText = 'Support specialist has handed the conversation back to RefundRescue AI Assistant. AI is now active and ready to assist you.';
   db.prepare(`
     INSERT INTO chat_messages (id, ticket_id, order_id, customer_id, sender, text, decision, confidence_score, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)

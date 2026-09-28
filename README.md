@@ -1,4 +1,4 @@
-# 🛡️ RevRescue — AI-Powered Customer Support & Refund System
+# 🛡️ RefundRescue — AI-Powered Customer Support & Refund System
 
 > A production-ready, fully containerized full-stack application that evaluates, approves, denies, and escalates e-commerce refund claims using a **hybrid deterministic policy engine + Google Gemini Flash deliberation**, equipped with dual-layer prompt-injection defense, multi-turn clarification, live human chat takeover, and an Apple Liquid Glass supervisor audit/override dashboard.
 
@@ -201,10 +201,10 @@ backend/src/
 
 ## 🤖 How AI Integration Works
 
-RevRescue employs an enterprise-grade **hybrid AI architecture** combining **Google Gemini Flash** with deterministic code boundaries, ensuring intelligent conversational nuance without risking financial hallucination or policy non-compliance.
+RefundRescue employs an enterprise-grade **hybrid AI architecture** combining **Google Gemini Flash** with deterministic code boundaries, ensuring intelligent conversational nuance without risking financial hallucination or policy non-compliance.
 
 ### 1. Dual-Engine Architecture: Gemini Flash & Heuristic Fallback
-- **Google Gemini Flash (`@google/genai`)**: RevRescue connects directly to Gemini Flash using Google's official GenAI SDK. Flash was chosen specifically for its sub-second deliberation latency (<800ms), low operational cost, and native structured JSON schema enforcement.
+- **Google Gemini Flash (`@google/genai`)**: RefundRescue connects directly to Gemini Flash using Google's official GenAI SDK. Flash was chosen specifically for its sub-second deliberation latency (<800ms), low operational cost, and native structured JSON schema enforcement.
 - **Zero-Config Heuristic Fallback Engine**: If no `GEMINI_API_KEY` is supplied, or during API network outages, the engine dynamically activates an internal rule-based heuristic evaluator (`geminiService.ts`). The fallback engine evaluates item condition, keyword sentiment, past customer refund ratios, and policy codes while adhering to the exact same response schema and confidence score metrics.
 
 ### 2. Structured JSON Output & Deterministic Low Temperature
@@ -243,7 +243,7 @@ Stage 5: SQLite Tamper-Evident Audit Logging (DatabaseSync)
 ```
 
 ### 4. Multi-Turn Interactive Clarification
-When a customer sends a vague or greeting message (e.g. *"Hello"*, *"I have an issue with my package"*), RevRescue initiates a clarification turn (`/api/chat/clarify`):
+When a customer sends a vague or greeting message (e.g. *"Hello"*, *"I have an issue with my package"*), RefundRescue initiates a clarification turn (`/api/chat/clarify`):
 - Rather than prematurely denying or approving an ambiguous claim, the engine prompts the shopper with specific follow-up questions (e.g. *"Could you describe what happened to the item?"*).
 - This mirrors real-world customer support, reduces unnecessary ticket escalation costs, and gathers missing claim evidence before invoking formal policy deliberation.
 
@@ -290,7 +290,7 @@ The database initializes with 15 realistic customer profiles designed to exercis
 
 ## ⚖️ Key Assumptions & Trade-offs
 
-During the design and implementation of RevRescue, several deliberate architectural decisions and trade-offs were made:
+During the design and implementation of RefundRescue, several deliberate architectural decisions and trade-offs were made:
 
 | Architectural Area | Decision Made | Rationale / Assumption | Trade-off / Considerations |
 |--------------------|---------------|------------------------|----------------------------|

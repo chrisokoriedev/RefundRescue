@@ -94,7 +94,7 @@ export default function PolicyRulesPage() {
           <span>Active Store Refund Policies & Constraints</span>
         </h2>
         <p className="text-xs text-slate-500 leading-relaxed max-w-3xl font-medium">
-          RevRescue pairs hardcoded business rules (time limits, price limits, final-sale flags) with an AI review step so every decision follows store policy exactly.
+          RefundRescue pairs hardcoded business rules (time limits, price limits, final-sale flags) with an AI review step so every decision follows store policy exactly.
         </p>
       </div>
 

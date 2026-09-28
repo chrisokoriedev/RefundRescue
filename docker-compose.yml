@@ -1,7 +1,7 @@
 services:
   backend:
     build: ./backend
-    container_name: revrescue-backend
+    container_name: refundrescue-backend
     ports:
       - "5000:5000"
     environment:
@@ -23,7 +23,7 @@ services:
       context: ./frontend
       args:
         - NEXT_PUBLIC_API_URL=http://localhost:5000
-    container_name: revrescue-frontend
+    container_name: refundrescue-frontend
     ports:
       - "3000:3000"
     environment:

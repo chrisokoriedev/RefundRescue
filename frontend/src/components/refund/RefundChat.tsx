@@ -101,7 +101,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
             {
               id: `welcome-${order.id}`,
               sender: 'ai',
-              text: `Hello ${customer.name}! I am RevRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
+              text: `Hello ${customer.name}! I am RefundRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
               timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }
           ]);
@@ -112,7 +112,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
             {
               id: `welcome-${order.id}`,
               sender: 'ai',
-              text: `Hello ${customer.name}! I am RevRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
+              text: `Hello ${customer.name}! I am RefundRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
               timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }
           ]);
@@ -178,7 +178,7 @@ export function RefundChat({ customer, order, initialPrompt, autoSendPrompt, onE
       {
         id: `welcome-${msgCounter.current}`,
         sender: 'ai',
-        text: `Hello ${customer.name}! I am RevRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
+        text: `Hello ${customer.name}! I am RefundRescue's AI customer support assistant. How can I help you with order #${order.id} today?`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]);

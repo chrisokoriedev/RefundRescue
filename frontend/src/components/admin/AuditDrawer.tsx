@@ -135,7 +135,7 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride, onTicketUpdated
         ticketId: ticket.id,
       });
       setTakeoverActive(false);
-      setTakeoverNotice('Chat session successfully handed back to RevRescue AI Assistant.');
+      setTakeoverNotice('Chat session successfully handed back to RefundRescue AI Assistant.');
       setTimeout(() => setTakeoverNotice(null), 4000);
       await loadHistory(ticket.order_id, ticket.customer_id);
       const updatedTicket = await fetchAdminTicketById(ticket.id);
@@ -355,7 +355,7 @@ export function AuditDrawer({ ticketId, onClose, onOpenOverride, onTicketUpdated
                             }`}
                           >
                             <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
-                              {isAgent ? '🛡️ You (Human Specialist)' : isCust ? `👤 ${ticket.customer_name}` : '🤖 RevRescue AI'}
+                              {isAgent ? '🛡️ You (Human Specialist)' : isCust ? `👤 ${ticket.customer_name}` : '🤖 RefundRescue AI'}
                             </span>
                             <div
                               className={`p-2.5 rounded-xl leading-relaxed text-xs ${

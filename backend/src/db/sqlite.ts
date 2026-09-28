@@ -5,15 +5,27 @@ import { seedCustomers, seedOrders } from './seedData.js';
 
 let dbInstance: DatabaseSync | null = null;
 
-export function initDatabase(dbPath: string = './data/revrescue.db'): DatabaseSync {
-  if (dbPath !== ':memory:') {
-    const dir = path.dirname(dbPath);
+export function initDatabase(dbPath?: string): DatabaseSync {
+  let targetPath = dbPath;
+  if (!targetPath) {
+    if (fs.existsSync('./data/revrescue.db') && !fs.existsSync('./data/refundrescue.db')) {
+      try {
+        fs.copyFileSync('./data/revrescue.db', './data/refundrescue.db');
+      } catch {
+        // Fallback to fresh creation
+      }
+    }
+    targetPath = './data/refundrescue.db';
+  }
+
+  if (targetPath !== ':memory:') {
+    const dir = path.dirname(targetPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
   }
 
-  dbInstance = new DatabaseSync(dbPath);
+  dbInstance = new DatabaseSync(targetPath);
 
   // Enable foreign keys
   dbInstance.exec('PRAGMA foreign_keys = ON;');
@@ -288,7 +300,7 @@ export function seedBaselineTickets(db: DatabaseSync): void {
     'Customer wants to return clearance cashmere scarf because the shade of red did not match their jacket.',
     'DENIED',
     0.99,
-    'Hello Elena, thank you for contacting RevRescue. We reviewed your claim for order #ORD-903. As stated during checkout and under store policy POL-001, clearance and final-sale merchandise cannot be refunded.',
+    'Hello Elena, thank you for contacting RefundRescue. We reviewed your claim for order #ORD-903. As stated during checkout and under store policy POL-001, clearance and final-sale merchandise cannot be refunded.',
     'Item SKU APP-SCARF-FS is explicitly marked as final sale (is_final_sale=1). POL-001 strictly disallows refunds for clearance merchandise.',
     'LOW',
     0,
@@ -321,7 +333,7 @@ export function seedBaselineTickets(db: DatabaseSync): void {
     'ORD-903',
     'CUST-103',
     'ai',
-    'Hello Elena, thank you for contacting RevRescue. We reviewed your claim for order #ORD-903. As stated during checkout and under store policy POL-001, clearance and final-sale merchandise cannot be refunded.',
+    'Hello Elena, thank you for contacting RefundRescue. We reviewed your claim for order #ORD-903. As stated during checkout and under store policy POL-001, clearance and final-sale merchandise cannot be refunded.',
     'DENIED',
     0.99,
     now

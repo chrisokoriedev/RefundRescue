@@ -141,7 +141,7 @@ export function AppShell({
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-1.5">
-                RevRescue
+                RefundRescue
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FF5500]"></span>
               </span>
               <span className="text-[10px] text-slate-400 font-semibold -mt-0.5 tracking-tight">AI Refund Assistant</span>

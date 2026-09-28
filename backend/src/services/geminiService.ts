@@ -147,7 +147,7 @@ function buildGeminiPrompt(
   preCheck: PolicyPreCheckResult,
   dialogueHistory?: string
 ): string {
-  return `You are RevRescue's Senior AI Customer Support Specialist.
+  return `You are RefundRescue's Senior AI Customer Support Specialist.
 Evaluate the following customer message against store policies and order context.
 ${dialogueHistory ? `\nPREVIOUS CONVERSATION HISTORY SO FAR:\n${dialogueHistory}\n` : ''}
 STORE POLICIES:

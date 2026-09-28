@@ -13,3 +13,5 @@ backend/.env.local
 frontend/.env
 frontend/.env.local
 .freebuff/
+doc
+RevRescue Doc

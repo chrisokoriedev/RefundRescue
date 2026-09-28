@@ -65,7 +65,7 @@ app.get('/health', (req: Request, res: Response) => {
     message: 'Service healthy',
     data: {
       status: 'ok',
-      service: 'RevRescue — AI Refund Evaluation System',
+      service: 'RefundRescue — AI Refund Evaluation System',
       version: '2.0.0',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -78,7 +78,7 @@ app.get('/health', (req: Request, res: Response) => {
 app.get('/api', (req: Request, res: Response) => {
   res.json({
     success: true,
-    message: 'RevRescue AI Refund API',
+    message: 'RefundRescue AI Refund API',
     data: {
       version: 'v2',
       baseUrl: '/api',
@@ -117,10 +117,10 @@ app.use(globalErrorHandler);
 if (process.env.NODE_ENV !== 'test') {
   const port = Number(config.port);
   const server = app.listen(port, '0.0.0.0', () => {
-    log.info({ port }, 'RevRescue server started');
+    log.info({ port }, 'RefundRescue server started');
     console.log(`
 =====================================================
-  🛡️  RevRescue — AI Refund Evaluation System
+  🛡️  RefundRescue — AI Refund Evaluation System
   ➜  API:        http://localhost:${port}/api
   ➜  Health:     http://localhost:${port}/health
   ➜  AI Engine:  ${config.geminiApiKey ? 'Google Gemini Flash' : 'Heuristic Fallback (no GEMINI_API_KEY set)'}
