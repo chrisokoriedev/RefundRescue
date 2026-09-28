@@ -1,5 +1,7 @@
 # 🛡️ RefundRescue — AI-Powered Customer Support & Refund System
 
+🎥 **Video Walkthrough Demo**: [Watch on Google Drive](https://drive.google.com/file/d/1CKMC4PoOksFc_CNGQe8SDL-m6Kk6MvPp/view?usp=sharing)
+
 > A production-ready, fully containerized full-stack application that evaluates, approves, denies, and escalates e-commerce refund claims using a **hybrid deterministic policy engine + Google Gemini Flash deliberation**, equipped with dual-layer prompt-injection defense, multi-turn clarification, live human chat takeover, and an Apple Liquid Glass supervisor audit/override dashboard.
 
 **Built for the WORKNOON Full Stack Engineer take-home assessment.**
